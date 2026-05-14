@@ -2,11 +2,10 @@
   "name": "supermercado-app",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
-  "type": "module",
+  "main": "src/server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node src/server.cjs"
+    "start": "node src/server.js"
   },
   "keywords": [],
   "author": "",
