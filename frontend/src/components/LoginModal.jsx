@@ -1,44 +1,36 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 export default function LoginModal({ onClose, onLogin, onSwitchToRegister }) {
   const [correo, setCorreo] = useState('');
   const [password, setPassword] = useState('');
-  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      const response = await fetch('http://localhost:3000/api/login', {
+      const response = await fetch('https://supermercado-5759.onrender.com/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ correo, password })
+        body: JSON.stringify({ correo, contrasena: password })
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        // Guardamos la sesión completa
         localStorage.setItem('usuario', JSON.stringify(data));
-        
         alert(`Bienvenido de nuevo, ${data.nombre}`);
-        onClose(); // Cerramos el modal
 
-        // Si rol_id es 2 es Admin, si es 1 es Cliente (ajusta según tu DB)
-        if (data.rol_id === 2) {
-          onLogin('admin');
-          navigate('/dashboard-admin');
+        if (data.rol === 'admin') {
+          onLogin('admin', data);
         } else {
-          onLogin('cliente');
-          navigate('/dashboard-cliente');
+          onLogin('cliente', data);
         }
       } else {
         alert(data.error || 'Credenciales incorrectas');
       }
     } catch (error) {
       console.error("Error al conectar con el servidor:", error);
-      alert("El servidor de MySQL parece estar apagado.");
+      alert("El servidor no responde.");
     }
   };
 

@@ -40,10 +40,13 @@ export default function App() {
   // --- LÓGICA DE REGISTRO ---
   const handleRegister = async (userData) => {
     try {
-      const response = await fetch('http://localhost:3000/api/usuarios', {
+      const response = await fetch('https://supermercado-5759.onrender.com/api/registro', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData)
+        body: JSON.stringify({
+                ...userData,
+                contrasena: userData.password
+})
       });
 
       const data = await response.json();
@@ -141,7 +144,7 @@ export default function App() {
 
       <main className="max-w-6xl mx-auto p-4 md:p-8">
         {view === 'landing' && <LandingPage onOpenLogin={() => setIsLoginOpen(true)} onOpenRegister={() => setIsRegisterOpen(true)} />}
-        {view === 'cliente' && <DashboardCliente onAddToCart={addToCart} />}
+        {view === 'cliente' && <DashboardCliente onAddToCart={addToCart} onLogout={handleLogout} />}
         {view === 'admin' && <DashboardAdmin />}
         {view === 'checkout' && <CheckoutPage cart={cart} onBack={() => setView('cliente')} onConfirm={processPayment} />}
       </main>

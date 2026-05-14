@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 
+const API = 'https://supermercado-5759.onrender.com';
+
 export default function DashboardAdmin() {
     const [seccion, setSeccion] = useState('usuarios');
     const [data, setData] = useState([]);
@@ -8,7 +10,7 @@ export default function DashboardAdmin() {
     const cargarDatos = async () => {
         let url = seccion === 'usuarios' ? '/api/admin/usuarios' : seccion === 'inventario' ? '/api/productos' : '/api/admin/ventas-hoy';
         try {
-            const res = await fetch(`http://localhost:3000${url}`);
+            const res = await fetch(`${API}${url}`);
             const result = await res.json();
             setData(Array.isArray(result) ? result : []);
         } catch (error) { setData([]); }
@@ -19,7 +21,7 @@ export default function DashboardAdmin() {
     const handleEliminar = async (id) => {
         if (!confirm("¿Estás seguro de eliminar este registro?")) return;
         const ruta = seccion === 'usuarios' ? 'usuarios' : 'productos';
-        await fetch(`http://localhost:3000/api/admin/${ruta}/${id}`, { method: 'DELETE' });
+        await fetch(`${API}/api/admin/${ruta}/${id}`, { method: 'DELETE' });
         cargarDatos();
     };
 
@@ -30,8 +32,8 @@ export default function DashboardAdmin() {
         
         const esEditar = modal.tipo === 'editar';
         const url = esEditar 
-            ? `http://localhost:3000/api/admin/${seccion === 'usuarios' ? 'usuarios' : 'productos'}/${modal.item.id}`
-            : `http://localhost:3000/api/admin/productos`;
+            ? `${API}/api/admin/${seccion === 'usuarios' ? 'usuarios' : 'productos'}/${modal.item.id}`
+            : `${API}/api/admin/productos`;
 
         await fetch(url, {
             method: esEditar ? 'PUT' : 'POST',

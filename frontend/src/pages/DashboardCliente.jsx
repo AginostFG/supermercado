@@ -1,28 +1,25 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
-export default function DashboardCliente({ onAddToCart }) {
-  const navigate = useNavigate();
+const API = 'https://supermercado-5759.onrender.com';
+
+export default function DashboardCliente({ onAddToCart, onLogout }) {
   const [usuario, setUsuario] = useState(null);
   const [productos, setProductos] = useState([]);
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
     const sesion = localStorage.getItem('usuario');
-    if (!sesion) {
-      navigate('/');
-    } else {
+    if (sesion) {
       setUsuario(JSON.parse(sesion));
-      obtenerProductos();
     }
-  }, [navigate]);
+    obtenerProductos();
+  }, []);
 
   const obtenerProductos = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/productos');
+      const response = await fetch(`${API}/api/productos`);
       const data = await response.json();
-      setData(Array.isArray(data) ? data : []);
-      setProductos(data);
+      setProductos(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error al obtener productos:", error);
     } finally {
@@ -40,7 +37,7 @@ export default function DashboardCliente({ onAddToCart }) {
           <p className="text-gray-500">Bienvenido a tu supermercado de confianza.</p>
         </div>
         <button 
-          onClick={() => { localStorage.removeItem('usuario'); navigate('/'); }}
+          onClick={onLogout}
           className="text-red-500 hover:text-red-700 font-semibold text-sm"
         >
           Cerrar Sesión
