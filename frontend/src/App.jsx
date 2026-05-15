@@ -9,50 +9,49 @@ import CartModal from './components/CartModal';
 import ProfileModal from './components/ProfileModal';
 
 export default function App() {
-  // Estados de navegación y datos
-  const [view, setView] = useState('landing'); 
-  const [user, setUser] = useState(null); 
-  const [cart, setCart] = useState([]); // Importante: Inicializado como array vacío
-  
+  const [view, setView] = useState('landing');
+  const [user, setUser] = useState(null);
+  const [cart, setCart] = useState([]);
+
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
-  // --- RECUPERAR SESIÓN AL CARGAR ---
+  // ✅ Recuperar sesión al cargar usando rol_id numérico
   useEffect(() => {
     const sesionGuardada = localStorage.getItem('usuario');
     if (sesionGuardada) {
       const datosUser = JSON.parse(sesionGuardada);
       setUser(datosUser);
-      // Redirigir según el rol guardado (Asegúrate que rol_id 2 sea Admin)
       setView(datosUser.rol_id === 2 ? 'admin' : 'cliente');
     }
   }, []);
 
-  // --- LÓGICA DE LOGIN ---
+  // ✅ handleLogin también guarda en localStorage por si acaso
   const handleLogin = (role, userData) => {
+    localStorage.setItem('usuario', JSON.stringify(userData));
     setUser(userData);
     setView(role);
     setIsLoginOpen(false);
   };
 
-  // --- LÓGICA DE REGISTRO ---
   const handleRegister = async (userData) => {
     try {
       const response = await fetch('https://supermercado-5759.onrender.com/api/registro', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-                ...userData,
-                contrasena: userData.password
-})
+          ...userData,
+          contrasena: userData.password
+        })
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        const usuarioCompleto = { ...userData, id: data.id, rol_id: 1 };
+        // ✅ Registro siempre devuelve rol_id: 1 (cliente)
+        const usuarioCompleto = { ...data, rol_id: 1 };
         localStorage.setItem('usuario', JSON.stringify(usuarioCompleto));
         setUser(usuarioCompleto);
         setView('cliente');
@@ -68,29 +67,23 @@ export default function App() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('usuario'); 
+    localStorage.removeItem('usuario');
     setUser(null);
-    setCart([]); 
+    setCart([]);
     setView('landing');
   };
 
-  // --- LÓGICA DEL CARRITO (CORREGIDA PARA EVITAR PANTALLA BLANCA) ---
   const addToCart = (producto) => {
     setCart((prevCart) => {
-      // Forzamos que sea un array por si acaso
       const itemsActuales = Array.isArray(prevCart) ? prevCart : [];
-      
-      // Buscamos si el producto ya existe
       const existe = itemsActuales.find(item => item.id === producto.id);
-      
+
       if (existe) {
-        // Si existe, aumentamos la cantidad
-        return itemsActuales.map(item => 
+        return itemsActuales.map(item =>
           item.id === producto.id ? { ...item, cantidad: (item.cantidad || 1) + 1 } : item
         );
       }
-      
-      // Si no existe, lo agregamos con cantidad 1
+
       return [...itemsActuales, { ...producto, cantidad: 1 }];
     });
   };
@@ -99,9 +92,9 @@ export default function App() {
     setCart(prev => prev.filter((_, index) => index !== indexToRemove));
   };
 
-  const goToCheckout = () => { 
-    setIsCartOpen(false); 
-    setView('checkout'); 
+  const goToCheckout = () => {
+    setIsCartOpen(false);
+    setView('checkout');
   };
 
   const processPayment = () => {
@@ -113,13 +106,13 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
       <nav className="bg-white shadow-sm p-4 px-6 flex justify-between items-center sticky top-0 z-40">
-        <div 
-          className="text-2xl font-black text-green-600 cursor-pointer" 
+        <div
+          className="text-2xl font-black text-green-600 cursor-pointer"
           onClick={() => view === 'landing' ? null : setView(user?.rol_id === 2 ? 'admin' : 'cliente')}
         >
           SuperPro
         </div>
-        
+
         {view === 'landing' ? (
           <div className="flex gap-3">
             <button onClick={() => setIsLoginOpen(true)} className="text-green-600 font-semibold hover:text-green-700 px-4 py-2">Iniciar Sesión</button>

@@ -17,7 +17,13 @@ const login = async (req, res) => {
     if (usuario.password !== contrasena)
       return res.status(401).json({ error: "Contraseña incorrecta" });
 
-    res.json({ id: usuario.id, nombre: usuario.nombre, rol: usuario.rol });
+    // ✅ Devuelve rol_id numérico (1 = cliente, 2 = admin)
+    res.json({
+      id: usuario.id,
+      nombre: usuario.nombre,
+      correo: usuario.correo,
+      rol_id: usuario.rol_id
+    });
 
   } catch (err) {
     console.error(err);
@@ -25,7 +31,6 @@ const login = async (req, res) => {
   }
 };
 
-// REGISTRO
 const registro = async (req, res) => {
   const { nombre, apellidos, correo, password, sexo, fechaNacimiento, telefono } = req.body;
 
@@ -39,8 +44,8 @@ const registro = async (req, res) => {
       return res.status(409).json({ error: "Ya existe una cuenta con ese correo" });
 
     const [result] = await db.execute(
-      `INSERT INTO usuarios (nombre, apellidos, correo, password, sexo, fecha_nacimiento, telefono, puntos, rol)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 0, 'cliente')`,
+      `INSERT INTO usuarios (nombre, apellidos, correo, password, sexo, fecha_nacimiento, telefono, puntos, rol_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 0, 1)`,
       [nombre, apellidos, correo, password, sexo, fechaNacimiento, telefono]
     );
 
@@ -48,7 +53,7 @@ const registro = async (req, res) => {
       mensaje: "Usuario registrado exitosamente",
       id: result.insertId,
       nombre,
-      rol: 'cliente'
+      rol_id: 1
     });
 
   } catch (err) {

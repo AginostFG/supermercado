@@ -20,11 +20,9 @@ export default function LoginModal({ onClose, onLogin, onSwitchToRegister }) {
         localStorage.setItem('usuario', JSON.stringify(data));
         alert(`Bienvenido de nuevo, ${data.nombre}`);
 
-        if (data.rol === 'admin') {
-          onLogin('admin', data);
-        } else {
-          onLogin('cliente', data);
-        }
+        // ✅ Usa rol_id numérico para decidir la vista
+        const vista = data.rol_id === 2 ? 'admin' : 'cliente';
+        onLogin(vista, data);
       } else {
         alert(data.error || 'Credenciales incorrectas');
       }
