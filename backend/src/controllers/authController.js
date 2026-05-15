@@ -14,7 +14,7 @@ const login = async (req, res) => {
 
     const usuario = rows[0];
 
-    if (usuario.contrasena !== contrasena)
+    if (usuario.password !== contrasena)
       return res.status(401).json({ error: "Contraseña incorrecta" });
 
     res.json({ id: usuario.id, nombre: usuario.nombre, rol: usuario.rol });
@@ -33,15 +33,13 @@ const registro = async (req, res) => {
     return res.status(400).json({ error: "Todos los campos son requeridos" });
 
   try {
-    // Verificar si el correo ya existe
     const [existe] = await db.query('SELECT id FROM usuarios WHERE correo = ?', [correo]);
 
     if (existe.length > 0)
       return res.status(409).json({ error: "Ya existe una cuenta con ese correo" });
 
-    // Insertar nuevo usuario
     const [result] = await db.execute(
-      `INSERT INTO usuarios (nombre, apellidos, correo, contrasena, sexo, fecha_nacimiento, telefono, puntos, rol)
+      `INSERT INTO usuarios (nombre, apellidos, correo, password, sexo, fecha_nacimiento, telefono, puntos, rol)
        VALUES (?, ?, ?, ?, ?, ?, ?, 0, 'cliente')`,
       [nombre, apellidos, correo, password, sexo, fechaNacimiento, telefono]
     );
