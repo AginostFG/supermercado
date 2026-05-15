@@ -4,7 +4,7 @@
 const soloAdmin = (req, res, next) => {
   const rol = req.headers['x-rol'];
 
-  if (rol !== 'admin') {
+  if (rol !== '2') {
     return res.status(403).json({ error: "Acceso denegado. Solo administradores." });
   }
 
