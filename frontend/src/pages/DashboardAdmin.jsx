@@ -32,7 +32,7 @@ export default function DashboardAdmin() {
         const formData = new FormData(e.target);
         const itemData = Object.fromEntries(formData.entries());
 
-        // Validar y convertir valores
+        // Validar y convertir valores numéricos para la Base de Datos
         if (itemData.stock !== undefined) {
             itemData.stock = parseInt(itemData.stock);
             if (itemData.stock < 0) return alert("El stock no puede ser negativo.");
@@ -104,7 +104,12 @@ export default function DashboardAdmin() {
                             <tr><td colSpan="3" className="text-center p-6 text-gray-400">No hay datos disponibles</td></tr>
                         ) : data.map(item => (
                             <tr key={item.id} className="border-b hover:bg-gray-50">
-                                <td className="p-4 font-bold">{item.nombre} {item.apellidos || ""}</td>
+                                <td className="p-4 font-bold">
+                                    {seccion === 'inventario' && item.imagen_url && (
+                                        <img src={item.imagen_url} alt="img" className="w-8 h-8 rounded-full inline-block mr-2 object-cover bg-gray-200" />
+                                    )}
+                                    {item.nombre} {item.apellidos || ""}
+                                </td>
                                 <td className="p-4 text-gray-600">
                                     {seccion === 'usuarios' ? item.correo
                                         : seccion === 'inventario' ? `$${Number(item.precio).toFixed(2)} | Stock: ${item.stock}`
