@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 const API = 'https://supermercado-5759.onrender.com';
-const HEADERS = { 'Content-Type': 'application/json', 'x-rol': 'admin' };
+const HEADERS = { 'Content-Type': 'application/json', 'x-rol': '2' };
 
 export default function DashboardAdmin() {
     const [seccion, setSeccion] = useState('usuarios');
