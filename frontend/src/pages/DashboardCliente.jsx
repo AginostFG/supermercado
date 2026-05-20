@@ -50,6 +50,18 @@ export default function DashboardCliente({ onAddToCart, onLogout }) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {productos.map(producto => (
             <div key={producto.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
+              
+              {/* 📸 IMAGEN DINÁMICA DEL PRODUCTO */}
+              <img 
+                src={producto.imagen_url || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80'} 
+                alt={producto.nombre} 
+                className="w-full h-44 object-cover rounded-xl mb-4 bg-gray-100"
+                onError={(e) => {
+                  e.target.onerror = null; 
+                  e.target.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80';
+                }}
+              />
+
               <h3 className="font-bold text-lg mb-1">{producto.nombre}</h3>
               <p className={`text-sm mb-4 ${producto.stock < 5 ? 'text-red-500 font-bold' : 'text-gray-500'}`}>
                 Stock disponible: {producto.stock}
