@@ -1,5 +1,6 @@
 export default function ProfileModal({ user, onClose }) {
-  const esAdmin = user?.rol === '2';
+// REEMPLAZA LA LÍNEA 2 POR ESTA:
+  const esAdmin = user?.rol_id == 2 || user?.rol === 'admin';
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
