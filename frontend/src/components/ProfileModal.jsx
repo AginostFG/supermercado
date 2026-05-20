@@ -1,5 +1,5 @@
 export default function ProfileModal({ user, onClose }) {
-  const esAdmin = user?.rol === 'admin';
+  const esAdmin = user?.rol === '2';
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
