@@ -32,11 +32,18 @@ export default function DashboardAdmin() {
         const formData = new FormData(e.target);
         const itemData = Object.fromEntries(formData.entries());
 
-        // Validar valores negativos
-        if (itemData.stock !== undefined && Number(itemData.stock) < 0)
-            return alert("El stock no puede ser negativo.");
-        if (itemData.precio !== undefined && Number(itemData.precio) < 0)
-            return alert("El precio no puede ser negativo.");
+        // Validar y convertir valores
+        if (itemData.stock !== undefined) {
+            itemData.stock = parseInt(itemData.stock);
+            if (itemData.stock < 0) return alert("El stock no puede ser negativo.");
+        }
+        if (itemData.precio !== undefined) {
+            itemData.precio = parseFloat(itemData.precio);
+            if (itemData.precio < 0) return alert("El precio no puede ser negativo.");
+        }
+        if (itemData.categoria_id !== undefined) {
+            itemData.categoria_id = parseInt(itemData.categoria_id);
+        }
 
         const esEditar = modal.tipo === 'editar';
         const url = esEditar
@@ -53,7 +60,8 @@ export default function DashboardAdmin() {
             setModal({ abierto: false, tipo: 'crear', item: null });
             cargarDatos();
         } else {
-            alert("Error al guardar. Intenta de nuevo.");
+            const err = await res.json();
+            alert(`Error al guardar: ${err.error || 'Intenta de nuevo.'}`);
         }
     };
 
@@ -128,34 +136,72 @@ export default function DashboardAdmin() {
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-xl">
                         <div className="bg-green-600 p-6 text-white font-bold text-center text-xl">
-                            {modal.tipo === 'editar' ? '✏️ Editar' : '➕ Nuevo Producto'}
+                            {modal.tipo === 'editar' ? '✏️ Editar' : '➕ Nuevo Registro'}
                         </div>
                         <form onSubmit={handleGuardar} className="p-6 space-y-4">
-                            <div>
-                                <label className="text-sm font-medium text-gray-700 mb-1 block">Nombre</label>
-                                <input name="nombre" defaultValue={modal.item?.nombre} placeholder="Nombre del producto"
-                                    className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none" required />
-                            </div>
+                            
                             {seccion === 'inventario' ? (
-                                <div className="flex gap-4">
-                                    <div className="flex-1">
-                                        <label className="text-sm font-medium text-gray-700 mb-1 block">Stock</label>
-                                        <input name="stock" type="number" min="0" defaultValue={modal.item?.stock}
-                                            placeholder="0" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none" required />
+                                <div className="space-y-3">
+                                    <div>
+                                        <label className="text-sm font-medium text-gray-700 mb-1 block">Nombre del Producto</label>
+                                        <input name="nombre" defaultValue={modal.item?.nombre} placeholder="Ej. Manzana"
+                                            className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none" required />
                                     </div>
-                                    <div className="flex-1">
-                                        <label className="text-sm font-medium text-gray-700 mb-1 block">Precio</label>
-                                        <input name="precio" type="number" min="0" step="0.01" defaultValue={modal.item?.precio}
-                                            placeholder="0.00" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none" required />
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="text-sm font-medium text-gray-700 mb-1 block">Stock</label>
+                                            <input name="stock" type="number" min="0" defaultValue={modal.item?.stock}
+                                                placeholder="0" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none" required />
+                                        </div>
+                                        <div>
+                                            <label className="text-sm font-medium text-gray-700 mb-1 block">Precio</label>
+                                            <input name="precio" type="number" min="0" step="0.01" defaultValue={modal.item?.precio}
+                                                placeholder="0.00" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none" required />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium text-gray-700 mb-1 block">ID Categoría</label>
+                                        <input name="categoria_id" type="number" min="1" defaultValue={modal.item?.categoria_id}
+                                            placeholder="Ej. 1" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none" required />
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium text-gray-700 mb-1 block">URL de la Imagen</label>
+                                        <input name="imagen_url" type="url" defaultValue={modal.item?.imagen_url}
+                                            placeholder="https://ejemplo.com/imagen.jpg" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none" />
                                     </div>
                                 </div>
                             ) : (
-                                <div>
-                                    <label className="text-sm font-medium text-gray-700 mb-1 block">Puntos</label>
-                                    <input name="puntos" type="number" min="0" defaultValue={modal.item?.puntos}
-                                        placeholder="0" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none" required />
+                                <div className="space-y-3">
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="text-sm font-medium text-gray-500 mb-1 block">Nombre (Fijo)</label>
+                                            <input type="text" defaultValue={modal.item?.nombre} disabled
+                                                className="w-full p-3 border bg-gray-100 text-gray-500 rounded-xl cursor-not-allowed focus:outline-none" />
+                                        </div>
+                                        <div>
+                                            <label className="text-sm font-medium text-gray-500 mb-1 block">Apellidos (Fijo)</label>
+                                            <input type="text" defaultValue={modal.item?.apellidos} disabled
+                                                className="w-full p-3 border bg-gray-100 text-gray-500 rounded-xl cursor-not-allowed focus:outline-none" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium text-gray-700 mb-1 block">Correo Electrónico</label>
+                                        <input name="correo" type="email" defaultValue={modal.item?.correo} placeholder="correo@ejemplo.com"
+                                            className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none" required />
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium text-gray-700 mb-1 block">Teléfono</label>
+                                        <input name="telefono" type="text" defaultValue={modal.item?.telefono} placeholder="Ej. 3001234567"
+                                            className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none" />
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium text-gray-700 mb-1 block">Puntos Acumulados</label>
+                                        <input name="puntos" type="number" min="0" defaultValue={modal.item?.puntos} placeholder="0" 
+                                            className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none" required />
+                                    </div>
                                 </div>
                             )}
+
                             <div className="flex gap-2 pt-2">
                                 <button type="submit" className="flex-1 bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 transition">
                                     Guardar

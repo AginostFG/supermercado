@@ -8,10 +8,13 @@ const getUsuarios = async (req, res) => {
 };
 
 const updateUsuario = async (req, res) => {
-  const { nombre, puntos } = req.body;
+  const { correo, telefono, puntos } = req.body;
   try {
-    await db.execute('UPDATE usuarios SET nombre = ?, puntos = ? WHERE id = ?', [nombre, puntos, req.params.id]);
-    res.json({ mensaje: "Usuario actualizado" });
+    await db.execute(
+      'UPDATE usuarios SET correo = ?, telefono = ?, puntos = ? WHERE id = ?', 
+      [correo, telefono, puntos, req.params.id]
+    );
+    res.json({ mensaje: "Usuario actualizado con éxito" });
   } catch (err) { res.status(500).json({ error: err.message }); }
 };
 

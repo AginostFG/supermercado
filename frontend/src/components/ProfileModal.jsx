@@ -1,5 +1,4 @@
 export default function ProfileModal({ user, onClose }) {
-// REEMPLAZA LA LÍNEA 2 POR ESTA:
   const esAdmin = user?.rol_id == 2 || user?.rol === 'admin';
 
   return (
