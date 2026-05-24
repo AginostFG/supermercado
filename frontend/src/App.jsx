@@ -71,7 +71,6 @@ export default function App() {
   };
 
   const addToCart = (producto) => {
-    // Si no hay usuario, pide iniciar sesión y no agrega el producto
     if (!user) {
       alert("Debes iniciar sesión para comprar productos.");
       setIsLoginOpen(true);
@@ -83,6 +82,11 @@ export default function App() {
       const existe = itemsActuales.find(item => item.id === producto.id);
 
       if (existe) {
+        // ✅ VALIDACIÓN DE STOCK AL AGREGAR
+        if (existe.cantidad >= producto.stock) {
+          alert(`¡Límite alcanzado! Solo quedan ${producto.stock} unidades disponibles.`);
+          return prevCart;
+        }
         return itemsActuales.map(item =>
           item.id === producto.id ? { ...item, cantidad: (item.cantidad || 1) + 1 } : item
         );
@@ -90,6 +94,19 @@ export default function App() {
 
       return [...itemsActuales, { ...producto, cantidad: 1 }];
     });
+  };
+
+  // ✅ NUEVA FUNCIÓN: Actualizar cantidad desde los botones + y - del carrito
+  const updateCartQuantity = (productoId, nuevaCantidad, stockDisponible) => {
+    if (nuevaCantidad > stockDisponible) {
+      alert(`¡Límite alcanzado! Solo quedan ${stockDisponible} unidades.`);
+      return;
+    }
+    if (nuevaCantidad < 1) return; // No bajar de 1, para eso está el botón eliminar
+
+    setCart(prevCart => prevCart.map(item => 
+      item.id === productoId ? { ...item, cantidad: nuevaCantidad } : item
+    ));
   };
 
   const removeFromCart = (indexToRemove) => {
@@ -117,7 +134,6 @@ export default function App() {
           SuperPro
         </div>
 
-        {/* Muestra botones de sesión si no hay usuario, de lo contrario muestra el carrito y perfil */}
         {!user ? (
           <div className="flex gap-3">
             <button onClick={() => setIsLoginOpen(true)} className="text-green-600 font-semibold hover:text-green-700 px-4 py-2">Iniciar Sesión</button>
@@ -149,7 +165,10 @@ export default function App() {
 
       {isLoginOpen && <LoginModal onClose={() => setIsLoginOpen(false)} onLogin={handleLogin} onSwitchToRegister={() => { setIsLoginOpen(false); setIsRegisterOpen(true); }} />}
       {isRegisterOpen && <RegisterModal onClose={() => setIsRegisterOpen(false)} onRegister={handleRegister} onSwitchToLogin={() => { setIsRegisterOpen(false); setIsLoginOpen(true); }} />}
-      {isCartOpen && <CartModal cart={cart} onClose={() => setIsCartOpen(false)} onRemoveItem={removeFromCart} onProceedToCheckout={goToCheckout} />}
+      
+      {/* Pasamos la función onUpdateQuantity al CartModal */}
+      {isCartOpen && <CartModal cart={cart} onClose={() => setIsCartOpen(false)} onRemoveItem={removeFromCart} onUpdateQuantity={updateCartQuantity} onProceedToCheckout={goToCheckout} />}
+      
       {isProfileOpen && <ProfileModal user={user} onClose={() => setIsProfileOpen(false)} />}
     </div>
   );
