@@ -1,38 +1,67 @@
+import { useState } from 'react';
+
 export default function ProfileModal({ user, onClose }) {
   const esAdmin = user?.rol_id == 2 || user?.rol === 'admin';
+  
+  // Estado preparado por si en el futuro conectas una tabla de historial en la base de datos
+  const [historial, setHistorial] = useState([]); 
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl p-6 w-full max-w-sm relative shadow-xl">
-        <button onClick={onClose} className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 font-bold">✕</button>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-3xl p-6 w-full max-w-md relative shadow-2xl max-h-[90vh] overflow-y-auto">
+        <button onClick={onClose} className="absolute right-5 top-5 text-gray-400 hover:text-gray-700 font-black text-xl transition-colors">✕</button>
         
-        <div className="text-center mb-6">
-          <div className={`w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold mx-auto mb-3 ${esAdmin ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
+        {/* Cabecera del Perfil */}
+        <div className="text-center mb-6 mt-4">
+          <div className={`w-24 h-24 rounded-full flex items-center justify-center text-4xl font-black mx-auto mb-4 shadow-md border-4 border-white ${esAdmin ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
             {user?.nombre?.charAt(0).toUpperCase() || 'U'}
           </div>
-          <h2 className="text-xl font-bold text-gray-800">{user?.nombre || 'Usuario'}</h2>
-          <p className="text-gray-500 text-sm">{user?.correo || 'Sin correo registrado'}</p>
-          <span className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-bold ${esAdmin ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
-            {esAdmin ? '⚙️ Administrador' : '👤 Cliente'}
+          <h2 className="text-2xl font-bold text-gray-800">{user?.nombre || 'Usuario'}</h2>
+          <p className="text-gray-500 font-medium mb-3">{user?.correo || 'Sin correo registrado'}</p>
+          <span className={`inline-block px-4 py-1.5 rounded-full text-sm font-bold shadow-sm ${esAdmin ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+            {esAdmin ? '⚙️ Administrador' : '👤 Cliente Pro'}
           </span>
         </div>
         
-        <div className="space-y-3 bg-gray-50 p-4 rounded-lg border border-gray-100">
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600 font-medium">Rol:</span>
+        {/* Estadísticas de la cuenta */}
+        <div className="space-y-4 bg-gray-50 p-5 rounded-2xl border border-gray-100 mb-6">
+          <div className="flex justify-between items-center">
+            <span className="text-gray-600 font-medium">Nivel de cuenta</span>
             <span className={`font-bold ${esAdmin ? 'text-purple-600' : 'text-blue-600'}`}>
-              {esAdmin ? 'Administrador' : 'Cliente'}
+              {esAdmin ? 'Administrador' : 'Estándar'}
             </span>
           </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600 font-medium">Puntos acumulados:</span>
-            <span className="font-semibold text-yellow-600">⭐ {user?.puntos || 0}</span>
+          <div className="flex justify-between items-center">
+            <span className="text-gray-600 font-medium">Puntos acumulados</span>
+            <span className="font-black text-xl text-yellow-500 flex items-center gap-1">
+              ⭐ {user?.puntos || 0}
+            </span>
           </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600 font-medium">Estado de la cuenta:</span>
-            <span className="font-semibold text-green-600">✅ Activa</span>
+          <div className="flex justify-between items-center">
+            <span className="text-gray-600 font-medium">Estado</span>
+            <span className="font-bold text-green-700 bg-green-100 px-3 py-1 rounded-lg text-xs">✅ Activa</span>
           </div>
         </div>
+
+        {/* Sección de Historial de Compras (Solo para clientes) */}
+        {!esAdmin && (
+          <div>
+            <h3 className="font-bold text-lg text-gray-800 mb-3 flex items-center gap-2">
+              🛍️ Tus últimas compras
+            </h3>
+            
+            {historial.length === 0 ? (
+              <div className="text-center bg-gray-50 p-6 rounded-2xl border-2 border-dashed border-gray-200">
+                <p className="text-gray-500 font-medium mb-1">Aún no tienes compras registradas.</p>
+                <p className="text-sm text-gray-400">¡Anímate a hacer tu primer pedido en la tienda!</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {/* Aquí se mapearía el historial cuando se conecte al backend */}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
