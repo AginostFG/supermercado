@@ -5,15 +5,16 @@ const HEADERS = { 'Content-Type': 'application/json', 'x-rol': '2' };
 
 export default function DashboardAdmin() {
     const [seccion, setSeccion] = useState('usuarios');
+    const [periodoVentas, setPeriodoVentas] = useState('diario'); // Nuevo estado para los filtros
     const [data, setData] = useState([]);
-    const [listaCategorias, setListaCategorias] = useState([]); // ✅ Estado para las categorías del select
+    const [listaCategorias, setListaCategorias] = useState([]); 
     const [modal, setModal] = useState({ abierto: false, tipo: 'crear', item: null });
 
     const cargarDatos = async () => {
         let url = '/api/admin/usuarios';
         if (seccion === 'inventario') url = '/api/productos';
         if (seccion === 'categorias') url = '/api/admin/categorias';
-        if (seccion === 'ventas') url = '/api/admin/ventas-hoy';
+        if (seccion === 'ventas') url = `/api/admin/ventas?periodo=${periodoVentas}`; // URL preparada para el backend
 
         try {
             const res = await fetch(`${API}${url}`, { headers: HEADERS });
@@ -21,7 +22,7 @@ export default function DashboardAdmin() {
             setData(Array.isArray(result) ? result : []);
         } catch (error) { setData([]); }
 
-        // Si estamos en inventario, cargamos las categorías disponibles para el formulario
+        // Cargar categorías para el select del formulario
         if (seccion === 'inventario') {
             try {
                 const resCat = await fetch(`${API}/api/admin/categorias`, { headers: HEADERS });
@@ -31,7 +32,7 @@ export default function DashboardAdmin() {
         }
     };
 
-    useEffect(() => { cargarDatos(); }, [seccion]);
+    useEffect(() => { cargarDatos(); }, [seccion, periodoVentas]);
 
     const handleEliminar = async (id, nombre) => {
         const confirmar = confirm(`¿Estás seguro de que deseas eliminar "${nombre}"?`);
@@ -88,110 +89,159 @@ export default function DashboardAdmin() {
         }
     };
 
-    return (
-        <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
-            <div className="bg-slate-800 text-white p-8 rounded-2xl">
-                <h2 className="text-3xl font-bold">Administración ⚙️</h2>
-            </div>
+    // Función simulada para calcular estadísticas visuales rápidas en la sección de ventas
+    const calcularStatsVentas = () => {
+        if (seccion !== 'ventas') return { ingresos: 0, ordenes: 0, items: 0 };
+        return {
+            ingresos: data.reduce((sum, v) => sum + (v.total || 0), 0),
+            ordenes: data.length,
+            items: data.reduce((sum, v) => sum + (v.cantidad_total || 0), 0)
+        };
+    };
 
-            <div className="flex flex-wrap gap-2 bg-white p-2 rounded-2xl shadow-sm border w-fit">
+    const stats = calcularStatsVentas();
+
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 p-4 md:p-0">
+            {/* MENÚ LATERAL ADMIN */}
+            <div className="md:col-span-1 bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-2 h-fit">
+                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-2">Panel Admin</h2>
                 {['usuarios', 'inventario', 'categorias', 'ventas'].map(s => (
-                    <button key={s} onClick={() => setSeccion(s)}
-                        className={`px-6 py-2 rounded-xl font-bold capitalize ${seccion === s ? 'bg-green-600 text-white' : 'text-gray-500 hover:bg-gray-100'}`}>
-                        {s}
+                    <button key={s} onClick={() => setSeccion(s)} className={`w-full text-left px-4 py-3 rounded-xl font-semibold capitalize transition ${seccion === s ? 'bg-green-50 text-green-700' : 'text-gray-600 hover:bg-gray-50'}`}>
+                        {s === 'usuarios' ? '👥' : s === 'inventario' ? '📦' : s === 'categorias' ? '🏷️' : '📊'} {s}
                     </button>
                 ))}
             </div>
 
-            <div className="bg-white p-6 rounded-2xl shadow-md">
-                <div className="flex justify-between mb-6">
-                    <h3 className="text-xl font-bold uppercase">{seccion}</h3>
-                    {seccion === 'inventario' && (
-                        <button onClick={() => setModal({ abierto: true, tipo: 'crear', item: null })} className="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold">+ Nuevo Producto</button>
-                    )}
-                    {seccion === 'categorias' && (
-                        <button onClick={() => setModal({ abierto: true, tipo: 'crear', item: null })} className="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold">+ Nueva Categoría</button>
+            {/* CONTENIDO PRINCIPAL */}
+            <div className="md:col-span-3 space-y-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100 gap-4">
+                    <div>
+                        <h1 className="text-2xl font-black text-gray-800 capitalize">Gestión de {seccion}</h1>
+                        <p className="text-gray-500 text-sm">Administra tu plataforma en tiempo real.</p>
+                    </div>
+                    {seccion !== 'ventas' && (
+                        <button onClick={() => setModal({ abierto: true, tipo: 'crear', item: null })} className="bg-green-600 hover:bg-green-700 text-white font-bold px-5 py-3 rounded-xl shadow-sm transition active:scale-95">
+                            + Añadir Nuevo
+                        </button>
                     )}
                 </div>
 
-                <table className="w-full text-left">
-                    <thead className="text-gray-400 text-xs border-b">
-                        <tr>
-                            <th className="p-4">{seccion === 'categorias' ? 'ID' : 'Nombre'}</th>
-                            <th className="p-4">{seccion === 'categorias' ? 'Nombre Categoría' : 'Info'}</th>
-                            <th className="p-4 text-right">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {data.length === 0 ? (
-                            <tr><td colSpan="3" className="text-center p-6 text-gray-400">No hay datos disponibles</td></tr>
-                        ) : data.map(item => (
-                            <tr key={item.id} className="border-b hover:bg-gray-50">
-                                <td className="p-4 font-bold">
-                                    {seccion === 'categorias' ? `#${item.id}` : (
-                                        <>
-                                            {seccion === 'inventario' && item.imagen_url && (
-                                                <img src={item.imagen_url} alt="img" className="w-8 h-8 rounded-full inline-block mr-2 object-cover bg-gray-200" />
+                {/* TARJETAS DE ESTADÍSTICAS Y FILTROS (Solo en Ventas) */}
+                {seccion === 'ventas' && (
+                    <div className="space-y-6">
+                        <div className="bg-white p-2 rounded-xl shadow-sm border border-gray-100 flex gap-1 overflow-x-auto">
+                            {['diario', 'semanal', 'mensual', 'anual'].map((periodo) => (
+                                <button
+                                    key={periodo}
+                                    onClick={() => setPeriodoVentas(periodo)}
+                                    className={`px-5 py-2.5 rounded-lg font-bold text-sm capitalize transition whitespace-nowrap ${periodoVentas === periodo ? 'bg-green-600 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}
+                                >
+                                    {periodo === 'diario' ? '📅 Hoy' : periodo === 'semanal' ? '🗓️ Semana' : periodo === 'mensual' ? '📊 Mes' : '👑 Año'}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                                <p className="text-gray-500 text-sm font-semibold mb-1">Ingresos Totales</p>
+                                <h3 className="text-2xl font-black text-green-600">${stats.ingresos.toLocaleString('es-CO')}</h3>
+                            </div>
+                            <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                                <p className="text-gray-500 text-sm font-semibold mb-1">Órdenes Realizadas</p>
+                                <h3 className="text-2xl font-black text-blue-600">{stats.ordenes} pedidos</h3>
+                            </div>
+                            <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                                <p className="text-gray-500 text-sm font-semibold mb-1">Productos Vendidos</p>
+                                <h3 className="text-2xl font-black text-purple-600">{stats.items} unidades</h3>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* TABLA DE DATOS */}
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider font-bold border-b border-gray-100">
+                                <tr>
+                                    <th className="p-4 pl-6">{seccion === 'categorias' ? 'ID' : 'Nombre'}</th>
+                                    <th className="p-4">{seccion === 'categorias' ? 'Categoría' : 'Info'}</th>
+                                    <th className="p-4 pr-6 text-right">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody className="text-sm text-gray-700 divide-y divide-gray-50">
+                                {data.length === 0 ? (
+                                    <tr><td colSpan="3" className="text-center p-8 text-gray-400">No hay datos disponibles en esta sección.</td></tr>
+                                ) : data.map((item, index) => (
+                                    <tr key={item.id || index} className="hover:bg-gray-50/50">
+                                        <td className="p-4 pl-6 font-bold">
+                                            {seccion === 'categorias' ? `#${item.id}` : seccion === 'ventas' ? `Orden #${item.id || index + 100}` : (
+                                                <div className="flex items-center gap-3">
+                                                    {seccion === 'inventario' && item.imagen_url && (
+                                                        <img src={item.imagen_url} alt="img" className="w-10 h-10 rounded-xl object-cover bg-gray-100" />
+                                                    )}
+                                                    <span>{item.nombre || item.cliente_nombre} {item.apellidos || ""}</span>
+                                                </div>
                                             )}
-                                            {item.nombre} {item.apellidos || ""}
-                                        </>
-                                    )}
-                                </td>
-                                <td className="p-4 text-gray-600">
-                                    {seccion === 'usuarios' ? item.correo
-                                        : seccion === 'inventario' ? `$${Number(item.precio).toLocaleString('es-CO')} | Stock: ${item.stock}`
-                                        : seccion === 'categorias' ? item.nombre
-                                        : `$${item.total}`}
-                                </td>
-                                <td className="p-4 text-right">
-                                    {seccion !== 'ventas' && (
-                                        <div className="flex justify-end gap-2">
-                                            <button onClick={() => setModal({ abierto: true, tipo: 'editar', item })} className="bg-blue-100 text-blue-600 hover:bg-blue-200 px-3 py-1 rounded-lg text-sm font-semibold">✏️ Editar</button>
-                                            <button onClick={() => handleEliminar(item.id, item.nombre)} className="bg-red-100 text-red-600 hover:bg-red-200 px-3 py-1 rounded-lg text-sm font-semibold">🗑️ Eliminar</button>
-                                        </div>
-                                    )}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                                        </td>
+                                        <td className="p-4 text-gray-600 font-medium">
+                                            {seccion === 'usuarios' ? item.correo
+                                                : seccion === 'inventario' ? `$${Number(item.precio).toLocaleString('es-CO')} | Stock: ${item.stock}`
+                                                : seccion === 'categorias' ? item.nombre
+                                                : `$${Number(item.total || 0).toLocaleString('es-CO')}`}
+                                        </td>
+                                        <td className="p-4 pr-6 text-right">
+                                            {seccion !== 'ventas' && (
+                                                <div className="flex justify-end gap-2">
+                                                    <button onClick={() => setModal({ abierto: true, tipo: 'editar', item })} className="bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-1.5 rounded-lg text-xs font-bold transition">Editar</button>
+                                                    <button onClick={() => handleEliminar(item.id, item.nombre)} className="bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold transition">Eliminar</button>
+                                                </div>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
+            {/* MODAL DE FORMULARIOS (Mantenido intacto) */}
             {modal.abierto && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-xl">
+                    <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl">
                         <div className="bg-green-600 p-6 text-white font-bold text-center text-xl">
-                            {modal.tipo === 'editar' ? '✏️ Editar' : '➕ Nuevo Registro'}
+                            {modal.tipo === 'editar' ? '✏️ Editar Registro' : '➕ Nuevo Registro'}
                         </div>
-                        <form onSubmit={handleGuardar} className="p-6 space-y-4">
+                        <form onSubmit={handleGuardar} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
                             
                             {seccion === 'categorias' && (
                                 <div>
                                     <label className="text-sm font-medium text-gray-700 mb-1 block">Nombre de la Categoría</label>
-                                    <input name="nombre" defaultValue={modal.item?.nombre} placeholder="Ej. Frutas y Verduras" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none" required />
+                                    <input name="nombre" defaultValue={modal.item?.nombre} placeholder="Ej. Frutas y Verduras" className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none" required />
                                 </div>
                             )}
 
                             {seccion === 'inventario' && (
-                                <div className="space-y-3">
+                                <div className="space-y-4">
                                     <div>
                                         <label className="text-sm font-medium text-gray-700 mb-1 block">Nombre del Producto</label>
-                                        <input name="nombre" defaultValue={modal.item?.nombre} placeholder="Ej. Manzana" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none" required />
+                                        <input name="nombre" defaultValue={modal.item?.nombre} placeholder="Ej. Manzana" className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none" required />
                                     </div>
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
                                             <label className="text-sm font-medium text-gray-700 mb-1 block">Stock</label>
-                                            <input name="stock" type="number" min="0" defaultValue={modal.item?.stock} placeholder="0" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none" required />
+                                            <input name="stock" type="number" min="0" defaultValue={modal.item?.stock} placeholder="0" className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none" required />
                                         </div>
                                         <div>
                                             <label className="text-sm font-medium text-gray-700 mb-1 block">Precio</label>
-                                            <input name="precio" type="number" min="0" step="0.01" defaultValue={modal.item?.precio} placeholder="0.00" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none" required />
+                                            <input name="precio" type="number" min="0" step="0.01" defaultValue={modal.item?.precio} placeholder="0.00" className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none" required />
                                         </div>
                                     </div>
                                     <div>
                                         <label className="text-sm font-medium text-gray-700 mb-1 block">Categoría</label>
-                                        {/* ✅ SELECT DINÁMICO DE CATEGORÍAS */}
-                                        <select name="categoria_id" defaultValue={modal.item?.categoria_id || ''} className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none bg-white" required>
+                                        <select name="categoria_id" defaultValue={modal.item?.categoria_id || ''} className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none bg-white" required>
                                             <option value="" disabled>Seleccione una categoría</option>
                                             {listaCategorias.map(cat => (
                                                 <option key={cat.id} value={cat.id}>{cat.nombre}</option>
@@ -200,41 +250,45 @@ export default function DashboardAdmin() {
                                     </div>
                                     <div>
                                         <label className="text-sm font-medium text-gray-700 mb-1 block">URL de la Imagen</label>
-                                        <input name="imagen_url" type="url" defaultValue={modal.item?.imagen_url} placeholder="https://ejemplo.com/imagen.jpg" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none" />
+                                        <input name="imagen_url" type="url" defaultValue={modal.item?.imagen_url} placeholder="https://ejemplo.com/imagen.jpg" className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none" />
                                     </div>
                                 </div>
                             )}
 
                             {seccion === 'usuarios' && (
-                                <div className="space-y-3">
+                                <div className="space-y-4">
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
                                             <label className="text-sm font-medium text-gray-500 mb-1 block">Nombre (Fijo)</label>
-                                            <input type="text" defaultValue={modal.item?.nombre} disabled className="w-full p-3 border bg-gray-100 text-gray-500 rounded-xl cursor-not-allowed focus:outline-none" />
+                                            <input type="text" defaultValue={modal.item?.nombre} disabled className="w-full p-3 border border-gray-200 bg-gray-50 text-gray-500 rounded-xl cursor-not-allowed focus:outline-none" />
                                         </div>
                                         <div>
                                             <label className="text-sm font-medium text-gray-500 mb-1 block">Apellidos (Fijo)</label>
-                                            <input type="text" defaultValue={modal.item?.apellidos} disabled className="w-full p-3 border bg-gray-100 text-gray-500 rounded-xl cursor-not-allowed focus:outline-none" />
+                                            <input type="text" defaultValue={modal.item?.apellidos} disabled className="w-full p-3 border border-gray-200 bg-gray-50 text-gray-500 rounded-xl cursor-not-allowed focus:outline-none" />
                                         </div>
                                     </div>
                                     <div>
                                         <label className="text-sm font-medium text-gray-700 mb-1 block">Correo Electrónico</label>
-                                        <input name="correo" type="email" defaultValue={modal.item?.correo} className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none" required />
+                                        <input name="correo" type="email" defaultValue={modal.item?.correo} className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none" required />
                                     </div>
                                     <div>
                                         <label className="text-sm font-medium text-gray-700 mb-1 block">Teléfono</label>
-                                        <input name="telefono" type="text" defaultValue={modal.item?.telefono} className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none" />
+                                        <input name="telefono" type="text" defaultValue={modal.item?.telefono} className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none" />
                                     </div>
                                     <div>
                                         <label className="text-sm font-medium text-gray-700 mb-1 block">Puntos Acumulados</label>
-                                        <input name="puntos" type="number" min="0" defaultValue={modal.item?.puntos} className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none" required />
+                                        <input name="puntos" type="number" min="0" defaultValue={modal.item?.puntos} className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none" required />
                                     </div>
                                 </div>
                             )}
 
-                            <div className="flex gap-2 pt-2">
-                                <button type="submit" className="flex-1 bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 transition">Guardar</button>
-                                <button type="button" onClick={() => setModal({ abierto: false, tipo: 'crear', item: null })} className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-300 transition">Cancelar</button>
+                            <div className="flex gap-3 pt-4 border-t border-gray-100">
+                                <button type="submit" className="flex-1 bg-green-600 text-white py-3.5 rounded-xl font-bold hover:bg-green-700 transition shadow-sm">
+                                    Guardar
+                                </button>
+                                <button type="button" onClick={() => setModal({ abierto: false, tipo: 'crear', item: null })} className="flex-1 bg-gray-100 text-gray-700 py-3.5 rounded-xl font-bold hover:bg-gray-200 transition">
+                                    Cancelar
+                                </button>
                             </div>
                         </form>
                     </div>
