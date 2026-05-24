@@ -1,9 +1,44 @@
 const express = require('express');
 const router = express.Router();
-const { getVentasHoy, getTodasVentas } = require('../controllers/ventasController');
-const { soloAdmin } = require('../middleware/authMiddleware');
+const db = require('../db');
 
-router.get('/ventas-hoy', soloAdmin, getVentasHoy);
-router.get('/ventas', soloAdmin, getTodasVentas);
+// Ruta: /api/admin/ventas
+router.get('/ventas', async (req, res) => {
+  const periodo = req.query.periodo || 'diario';
+  let filtroFecha = '';
+
+  // Filtros dinámicos según lo que seleccione el administrador
+  if (periodo === 'diario') {
+    filtroFecha = 'DATE(v.fecha_venta) = CURDATE()';
+  } else if (periodo === 'semanal') {
+    filtroFecha = 'YEARWEEK(v.fecha_venta, 1) = YEARWEEK(CURDATE(), 1)';
+  } else if (periodo === 'mensual') {
+    filtroFecha = 'MONTH(v.fecha_venta) = MONTH(CURDATE()) AND YEAR(v.fecha_venta) = YEAR(CURDATE())';
+  } else if (periodo === 'anual') {
+    filtroFecha = 'YEAR(v.fecha_venta) = YEAR(CURDATE())';
+  }
+
+  try {
+    // Consulta poderosa: Trae la venta, une el nombre del cliente y suma cuántos productos se llevaron en ese pedido
+    const query = `
+      SELECT 
+        v.id, 
+        u.nombre AS cliente_nombre, 
+        v.fecha_venta AS fecha, 
+        v.total,
+        (SELECT SUM(cantidad) FROM venta_detalles WHERE venta_id = v.id) AS cantidad_total
+      FROM ventas v
+      LEFT JOIN usuarios u ON v.usuario_id = u.id
+      ${filtroFecha ? `WHERE ${filtroFecha}` : ''}
+      ORDER BY v.fecha_venta DESC
+    `;
+    
+    const [rows] = await db.query(query);
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 module.exports = router;

@@ -118,16 +118,17 @@ export default function App() {
     setView('checkout');
   };
 
- const processPayment = async () => {
+const processPayment = async () => {
     try {
       const response = await fetch('https://supermercado-5759.onrender.com/api/comprar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cart }) 
+        // ✅ Ahora también enviamos el usuario_id al backend
+        body: JSON.stringify({ cart, usuario_id: user?.id }) 
       });
 
       if (response.ok) {
-        alert("¡Pago exitoso! Hemos descontado los productos del inventario.");
+        alert("¡Pago exitoso! Hemos registrado tu compra y descontado el inventario.");
         setCart([]);
         setView('cliente');
       } else {
