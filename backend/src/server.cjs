@@ -9,7 +9,7 @@ app.use(express.json());
 // ==================== RUTAS PÚBLICAS / CLIENTES ====================
 app.use('/api', require('./routes/auth'));
 app.use('/api/productos', require('./routes/productos'));
-
+app.use('/api/comprar', require('./routes/compras'));
 // ==================== RUTAS DE ADMINISTRACIÓN ====================
 // (Se colocan primero las rutas más específicas)
 app.use('/api/admin/usuarios', require('./routes/usuarios'));

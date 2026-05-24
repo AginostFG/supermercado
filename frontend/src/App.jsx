@@ -118,10 +118,25 @@ export default function App() {
     setView('checkout');
   };
 
-  const processPayment = () => {
-    alert("¡Pago exitoso!");
-    setCart([]);
-    setView('cliente');
+ const processPayment = async () => {
+    try {
+      const response = await fetch('https://supermercado-5759.onrender.com/api/comprar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cart }) 
+      });
+
+      if (response.ok) {
+        alert("¡Pago exitoso! Hemos descontado los productos del inventario.");
+        setCart([]);
+        setView('cliente');
+      } else {
+        alert("Hubo un error procesando tu compra. Intenta de nuevo.");
+      }
+    } catch (error) {
+      console.error("Error en la compra:", error);
+      alert("Error al conectar con el servidor.");
+    }
   };
 
   return (
