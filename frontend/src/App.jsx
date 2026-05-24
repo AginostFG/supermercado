@@ -18,7 +18,6 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
-  // ✅ Recuperar sesión al cargar usando rol_id numérico
   useEffect(() => {
     const sesionGuardada = localStorage.getItem('usuario');
     if (sesionGuardada) {
@@ -28,7 +27,6 @@ export default function App() {
     }
   }, []);
 
-  // ✅ handleLogin también guarda en localStorage por si acaso
   const handleLogin = (role, userData) => {
     localStorage.setItem('usuario', JSON.stringify(userData));
     setUser(userData);
@@ -50,7 +48,6 @@ export default function App() {
       const data = await response.json();
 
       if (response.ok) {
-        // ✅ Registro siempre devuelve rol_id: 1 (cliente)
         const usuarioCompleto = { ...data, rol_id: 1 };
         localStorage.setItem('usuario', JSON.stringify(usuarioCompleto));
         setUser(usuarioCompleto);
@@ -74,6 +71,13 @@ export default function App() {
   };
 
   const addToCart = (producto) => {
+    // Si no hay usuario, pide iniciar sesión y no agrega el producto
+    if (!user) {
+      alert("Debes iniciar sesión para comprar productos.");
+      setIsLoginOpen(true);
+      return;
+    }
+
     setCart((prevCart) => {
       const itemsActuales = Array.isArray(prevCart) ? prevCart : [];
       const existe = itemsActuales.find(item => item.id === producto.id);
@@ -108,12 +112,13 @@ export default function App() {
       <nav className="bg-white shadow-sm p-4 px-6 flex justify-between items-center sticky top-0 z-40">
         <div
           className="text-2xl font-black text-green-600 cursor-pointer"
-          onClick={() => view === 'landing' ? null : setView(user?.rol_id === 2 ? 'admin' : 'cliente')}
+          onClick={() => setView(user ? (user.rol_id === 2 ? 'admin' : 'cliente') : 'landing')}
         >
           SuperPro
         </div>
 
-        {view === 'landing' ? (
+        {/* Muestra botones de sesión si no hay usuario, de lo contrario muestra el carrito y perfil */}
+        {!user ? (
           <div className="flex gap-3">
             <button onClick={() => setIsLoginOpen(true)} className="text-green-600 font-semibold hover:text-green-700 px-4 py-2">Iniciar Sesión</button>
             <button onClick={() => setIsRegisterOpen(true)} className="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold shadow-sm">Registrarse</button>
@@ -136,8 +141,8 @@ export default function App() {
       </nav>
 
       <main className="max-w-6xl mx-auto p-4 md:p-8">
-        {view === 'landing' && <LandingPage onOpenLogin={() => setIsLoginOpen(true)} onOpenRegister={() => setIsRegisterOpen(true)} />}
-        {view === 'cliente' && <DashboardCliente onAddToCart={addToCart} onLogout={handleLogout} />}
+        {view === 'landing' && <LandingPage onGoToStore={() => setView('cliente')} />}
+        {view === 'cliente' && <DashboardCliente onAddToCart={addToCart} />}
         {view === 'admin' && <DashboardAdmin />}
         {view === 'checkout' && <CheckoutPage cart={cart} onBack={() => setView('cliente')} onConfirm={processPayment} />}
       </main>

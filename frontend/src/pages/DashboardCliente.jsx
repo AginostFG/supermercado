@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 const API = 'https://supermercado-5759.onrender.com';
 
-export default function DashboardCliente({ onAddToCart, onLogout }) {
+export default function DashboardCliente({ onAddToCart }) {
   const [usuario, setUsuario] = useState(null);
   const [productos, setProductos] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -27,21 +27,17 @@ export default function DashboardCliente({ onAddToCart, onLogout }) {
     }
   };
 
-  if (!usuario) return null;
-
   return (
     <div className="space-y-6">
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">Hola, {usuario.nombre} 👋</h2>
+          {/* Si hay usuario muestra el nombre, si no, dice Invitado */}
+          <h2 className="text-2xl font-bold text-gray-800">
+            Hola, {usuario ? usuario.nombre : 'Invitado'} 👋
+          </h2>
           <p className="text-gray-500">Bienvenido a tu supermercado de confianza.</p>
         </div>
-        <button 
-          onClick={onLogout}
-          className="text-red-500 hover:text-red-700 font-semibold text-sm"
-        >
-          Cerrar Sesión
-        </button>
+        {/* Eliminamos el botón de Cerrar Sesión de aquí */}
       </div>
 
       {cargando ? (
@@ -51,7 +47,7 @@ export default function DashboardCliente({ onAddToCart, onLogout }) {
           {productos.map(producto => (
             <div key={producto.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
               
-              {/* 📸 IMAGEN DINÁMICA DEL PRODUCTO */}
+              {/* IMAGEN DINÁMICA DEL PRODUCTO */}
               <img 
                 src={producto.imagen_url || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80'} 
                 alt={producto.nombre} 
@@ -69,7 +65,8 @@ export default function DashboardCliente({ onAddToCart, onLogout }) {
               
               <div className="mt-auto flex items-center justify-between">
                 <span className="text-green-600 font-black text-xl">
-                  ${Number(producto.precio).toFixed(2)}
+                  {/* AQUÍ APLICAMOS EL FORMATO DE MILES/MILLONES */}
+                  ${Number(producto.precio).toLocaleString('es-CO')}
                 </span>
                 
                 <button 
