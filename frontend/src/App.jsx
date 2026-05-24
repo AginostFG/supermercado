@@ -82,7 +82,6 @@ export default function App() {
       const existe = itemsActuales.find(item => item.id === producto.id);
 
       if (existe) {
-        // ✅ VALIDACIÓN DE STOCK AL AGREGAR
         if (existe.cantidad >= producto.stock) {
           alert(`¡Límite alcanzado! Solo quedan ${producto.stock} unidades disponibles.`);
           return prevCart;
@@ -96,13 +95,12 @@ export default function App() {
     });
   };
 
-  // ✅ NUEVA FUNCIÓN: Actualizar cantidad desde los botones + y - del carrito
   const updateCartQuantity = (productoId, nuevaCantidad, stockDisponible) => {
     if (nuevaCantidad > stockDisponible) {
       alert(`¡Límite alcanzado! Solo quedan ${stockDisponible} unidades.`);
       return;
     }
-    if (nuevaCantidad < 1) return; // No bajar de 1, para eso está el botón eliminar
+    if (nuevaCantidad < 1) return;
 
     setCart(prevCart => prevCart.map(item => 
       item.id === productoId ? { ...item, cantidad: nuevaCantidad } : item
@@ -118,13 +116,18 @@ export default function App() {
     setView('checkout');
   };
 
-const processPayment = async () => {
+  const processPayment = async (datosCheckout) => {
     try {
       const response = await fetch('https://supermercado-5759.onrender.com/api/comprar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // ✅ Ahora también enviamos el usuario_id al backend
-        body: JSON.stringify({ cart, usuario_id: user?.id }) 
+        // Enviamos el carrito, id de usuario, dirección unificada y el método de pago seleccionado
+        body: JSON.stringify({ 
+          cart, 
+          usuario_id: user?.id,
+          direccion: datosCheckout.direccion,
+          metodoPago: datosCheckout.metodoPago
+        }) 
       });
 
       if (response.ok) {
@@ -181,10 +184,7 @@ const processPayment = async () => {
 
       {isLoginOpen && <LoginModal onClose={() => setIsLoginOpen(false)} onLogin={handleLogin} onSwitchToRegister={() => { setIsLoginOpen(false); setIsRegisterOpen(true); }} />}
       {isRegisterOpen && <RegisterModal onClose={() => setIsRegisterOpen(false)} onRegister={handleRegister} onSwitchToLogin={() => { setIsRegisterOpen(false); setIsLoginOpen(true); }} />}
-      
-      {/* Pasamos la función onUpdateQuantity al CartModal */}
       {isCartOpen && <CartModal cart={cart} onClose={() => setIsCartOpen(false)} onRemoveItem={removeFromCart} onUpdateQuantity={updateCartQuantity} onProceedToCheckout={goToCheckout} />}
-      
       {isProfileOpen && <ProfileModal user={user} onClose={() => setIsProfileOpen(false)} />}
     </div>
   );

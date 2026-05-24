@@ -1,14 +1,45 @@
+import { useState } from 'react';
+
 export default function CheckoutPage({ cart, onBack, onConfirm }) {
-  // ✅ Cálculo corregido tomando en cuenta la cantidad de productos
+  // Estados para segmentar la dirección de manera organizada
+  const [barrio, setBarrio] = useState('');
+  const [carrera, setCarrera] = useState('');
+  const [calle, setCalle] = useState('');
+  const [numeroCasa, setNumeroCasa] = useState('');
+  const [metodoPago, setMetodoPago] = useState('Pago Contra Entrega');
+
   const total = cart.reduce((sum, item) => sum + Number(item.precio) * (item.cantidad || 1), 0);
 
-  // ✅ Formato de moneda en miles
   const formatearMoneda = (valor) => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
       currency: 'COP',
       minimumFractionDigits: 0
     }).format(valor);
+  };
+
+  const handleConfirmar = (e) => {
+    e.preventDefault();
+
+    if (!barrio.trim() || !numeroCasa.trim() || (!carrera.trim() && !calle.trim())) {
+      alert("Por favor completa los datos básicos de envío (Barrio, Vía principal y # de casa).");
+      return;
+    }
+
+    // Unificamos la dirección en una sola cadena limpia para guardar en la base de datos
+    const partesDireccion = [];
+    if (carrera.trim()) partesDireccion.push(`Carrera ${carrera.trim()}`);
+    if (calle.trim()) partesDireccion.push(`Calle ${calle.trim()}`);
+    partesDireccion.push(`#${numeroCasa.trim()}`);
+    partesDireccion.push(`Barrio ${barrio.trim()}`);
+
+    const direccionCompleta = partesDireccion.join(', ');
+
+    // Enviamos el objeto con la dirección construida y el método de pago al backend
+    onConfirm({
+      direccion: direccionCompleta,
+      metodoPago: metodoPago
+    });
   };
 
   if (cart.length === 0) {
@@ -32,23 +63,66 @@ export default function CheckoutPage({ cart, onBack, onConfirm }) {
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-6">
           <h2 className="text-xl font-bold text-gray-800">Detalles de Envío y Pago</h2>
           
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Dirección de Entrega</label>
-            <input type="text" className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none" placeholder="Calle Falsa 123" />
-          </div>
+          <form onSubmit={handleConfirmar} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Dirección de Entrega</label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2">
+                  <input 
+                    type="text" 
+                    placeholder="Nombre del Barrio (Ej: 12 de Octubre)" 
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:outline-none"
+                    value={barrio}
+                    onChange={(e) => setBarrio(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <input 
+                    type="text" 
+                    placeholder="Carrera (Ej: 72)" 
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:outline-none"
+                    value={carrera}
+                    onChange={(e) => setCarrera(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <input 
+                    type="text" 
+                    placeholder="Calle (Ej: 81)" 
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:outline-none"
+                    value={calle}
+                    onChange={(e) => setCalle(e.target.value)}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <input 
+                    type="text" 
+                    placeholder="# de Casa / Apto / Interior (Ej: 19)" 
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:outline-none"
+                    value={numeroCasa}
+                    onChange={(e) => setNumeroCasa(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Método de Pago</label>
-            <select className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white focus:ring-2 focus:ring-green-500 focus:outline-none">
-              <option>Tarjeta de Crédito / Débito</option>
-              <option>Pago Contra Entrega</option>
-              <option>Transferencia Bancaria</option>
-            </select>
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Método de Pago</label>
+              <select 
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white focus:ring-2 focus:ring-green-500 focus:outline-none"
+                value={metodoPago}
+                onChange={(e) => setMetodoPago(e.target.value)}
+              >
+                <option value="Pago Contra Entrega">Pago Contra Entrega</option>
+                <option value="Tarjeta de Crédito / Débito">Tarjeta de Crédito / Débito</option>
+                <option value="Transferencia Bancaria">Transferencia Bancaria</option>
+              </select>
+            </div>
 
-          <button onClick={onConfirm} className="w-full bg-green-600 text-white font-bold rounded-lg py-3 hover:bg-green-700 transition shadow-md">
-            Confirmar Pedido ({formatearMoneda(total)})
-          </button>
+            <button type="submit" className="w-full bg-green-600 text-white font-bold rounded-lg py-3 hover:bg-green-700 transition shadow-md mt-4">
+              Confirmar Pedido ({formatearMoneda(total)})
+            </button>
+          </form>
         </div>
 
         <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200 h-fit">

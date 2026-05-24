@@ -7,7 +7,7 @@ router.get('/ventas', async (req, res) => {
   const periodo = req.query.periodo || 'diario';
   let filtroFecha = '';
 
-  // Filtros dinámicos según lo que seleccione el administrador
+  // Filtros dinámicos de fechas
   if (periodo === 'diario') {
     filtroFecha = 'DATE(v.fecha_venta) = CURDATE()';
   } else if (periodo === 'semanal') {
@@ -19,13 +19,15 @@ router.get('/ventas', async (req, res) => {
   }
 
   try {
-    // Consulta poderosa: Trae la venta, une el nombre del cliente y suma cuántos productos se llevaron en ese pedido
+    // Agregadas las columnas v.direccion y v.metodo_pago para reflejar los datos de entrega en el dashboard admin
     const query = `
       SELECT 
         v.id, 
         u.nombre AS cliente_nombre, 
         v.fecha_venta AS fecha, 
         v.total,
+        v.direccion,
+        v.metodo_pago,
         (SELECT SUM(cantidad) FROM venta_detalles WHERE venta_id = v.id) AS cantidad_total
       FROM ventas v
       LEFT JOIN usuarios u ON v.usuario_id = u.id
