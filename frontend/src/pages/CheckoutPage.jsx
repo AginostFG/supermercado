@@ -97,7 +97,7 @@ export default function CheckoutPage({ cart, onBack, onConfirm }) {
                 <div className="col-span-2">
                   <input 
                     type="text" 
-                    placeholder="# de Casa / Apto / Interior)" 
+                    placeholder="# de Casa / Apto / Interior" 
                     className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:outline-none"
                     value={numeroCasa}
                     onChange={(e) => setNumeroCasa(e.target.value)}
