@@ -70,7 +70,7 @@ export default function CheckoutPage({ cart, onBack, onConfirm }) {
                 <div className="col-span-2">
                   <input 
                     type="text" 
-                    placeholder="Nombre del Barrio (Ej: 12 de Octubre)" 
+                    placeholder="Nombre del Barrio" 
                     className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:outline-none"
                     value={barrio}
                     onChange={(e) => setBarrio(e.target.value)}
@@ -79,7 +79,7 @@ export default function CheckoutPage({ cart, onBack, onConfirm }) {
                 <div>
                   <input 
                     type="text" 
-                    placeholder="Carrera (Ej: 72)" 
+                    placeholder="Carrera" 
                     className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:outline-none"
                     value={carrera}
                     onChange={(e) => setCarrera(e.target.value)}
@@ -88,7 +88,7 @@ export default function CheckoutPage({ cart, onBack, onConfirm }) {
                 <div>
                   <input 
                     type="text" 
-                    placeholder="Calle (Ej: 81)" 
+                    placeholder="Calle" 
                     className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:outline-none"
                     value={calle}
                     onChange={(e) => setCalle(e.target.value)}
@@ -97,7 +97,7 @@ export default function CheckoutPage({ cart, onBack, onConfirm }) {
                 <div className="col-span-2">
                   <input 
                     type="text" 
-                    placeholder="# de Casa / Apto / Interior (Ej: 19)" 
+                    placeholder="# de Casa / Apto / Interior)" 
                     className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:outline-none"
                     value={numeroCasa}
                     onChange={(e) => setNumeroCasa(e.target.value)}
