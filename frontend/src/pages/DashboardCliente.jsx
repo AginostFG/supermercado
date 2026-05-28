@@ -8,9 +8,14 @@ export default function DashboardCliente({ onAddToCart }) {
   const [categorias, setCategorias] = useState([]);
   const [cargando, setCargando] = useState(true);
   
-  // ✅ Nuevos estados para filtros y búsqueda
+  // ✅ Estados para filtros y búsqueda
   const [busqueda, setBusqueda] = useState('');
   const [categoriaActiva, setCategoriaActiva] = useState('');
+  
+  // ✅ NUEVOS estados para filtros avanzados
+  const [precioMin, setPrecioMin] = useState('');
+  const [precioMax, setPrecioMax] = useState('');
+  const [orden, setOrden] = useState(''); // 'precio_asc', 'precio_desc', 'az', 'za'
 
   useEffect(() => {
     const sesion = localStorage.getItem('usuario');
@@ -22,7 +27,6 @@ export default function DashboardCliente({ onAddToCart }) {
 
   const obtenerDatos = async () => {
     try {
-      // Obtenemos productos y categorías al mismo tiempo desde el backend
       const [resProductos, resCategorias] = await Promise.all([
         fetch(`${API}/api/productos`),
         fetch(`${API}/api/admin/categorias`)
@@ -40,15 +44,42 @@ export default function DashboardCliente({ onAddToCart }) {
     }
   };
 
-  // ✅ Lógica para filtrar productos en tiempo real
-  const productosFiltrados = productos.filter(producto => {
+  // ✅ Lógica MEJORADA para filtrar y ordenar productos en tiempo real
+  let productosFiltrados = productos.filter(producto => {
+    // Filtro por texto
     const coincideBusqueda = producto.nombre.toLowerCase().includes(busqueda.toLowerCase());
+    // Filtro por categoría
     const coincideCategoria = categoriaActiva === '' || producto.categoria_id === parseInt(categoriaActiva);
-    return coincideBusqueda && coincideCategoria;
+    // Filtros por precio
+    const precio = Number(producto.precio);
+    const coincidePrecioMin = precioMin === '' || precio >= Number(precioMin);
+    const coincidePrecioMax = precioMax === '' || precio <= Number(precioMax);
+    
+    return coincideBusqueda && coincideCategoria && coincidePrecioMin && coincidePrecioMax;
   });
+
+  // ✅ Lógica para ordenar el array resultante
+  if (orden === 'precio_asc') {
+    productosFiltrados.sort((a, b) => Number(a.precio) - Number(b.precio));
+  } else if (orden === 'precio_desc') {
+    productosFiltrados.sort((a, b) => Number(b.precio) - Number(a.precio));
+  } else if (orden === 'az') {
+    productosFiltrados.sort((a, b) => a.nombre.localeCompare(b.nombre));
+  } else if (orden === 'za') {
+    productosFiltrados.sort((a, b) => b.nombre.localeCompare(a.nombre));
+  }
+
+  // Función para limpiar filtros avanzados
+  const limpiarFiltros = () => {
+    setPrecioMin('');
+    setPrecioMax('');
+    setOrden('');
+    setBusqueda('');
+  };
 
   return (
     <div className="space-y-6">
+      {/* HEADER DE BIENVENIDA Y BÚSQUEDA */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">
@@ -57,19 +88,18 @@ export default function DashboardCliente({ onAddToCart }) {
           <p className="text-gray-500">¿Qué vas a llevar hoy?</p>
         </div>
 
-        {/* ✅ BARRA DE BÚSQUEDA */}
         <div className="w-full md:w-1/3 relative">
           <input 
             type="text" 
             placeholder="🔍 Buscar productos..." 
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            className="w-full p-3 pl-10 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none bg-gray-50"
+            className="w-full p-3 pl-10 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none bg-gray-50 transition"
           />
         </div>
       </div>
 
-      {/* ✅ BOTONES DE CATEGORÍAS */}
+      {/* BOTONES DE CATEGORÍAS */}
       <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
         <button 
           onClick={() => setCategoriaActiva('')}
@@ -96,6 +126,55 @@ export default function DashboardCliente({ onAddToCart }) {
         ))}
       </div>
 
+      {/* ✅ NUEVA BARRA DE FILTROS AVANZADOS */}
+      <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-wrap gap-4 items-center justify-between">
+        <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
+          <div className="flex items-center gap-2">
+            <span className="text-gray-600 font-medium text-sm">💰 Precio:</span>
+            <input 
+              type="number" 
+              placeholder="Min" 
+              value={precioMin} 
+              onChange={e => setPrecioMin(e.target.value)} 
+              className="w-24 p-2 border border-gray-200 rounded-lg text-sm focus:ring-1 focus:ring-green-500 focus:outline-none" 
+            />
+            <span className="text-gray-400">-</span>
+            <input 
+              type="number" 
+              placeholder="Max" 
+              value={precioMax} 
+              onChange={e => setPrecioMax(e.target.value)} 
+              className="w-24 p-2 border border-gray-200 rounded-lg text-sm focus:ring-1 focus:ring-green-500 focus:outline-none" 
+            />
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <span className="text-gray-600 font-medium text-sm">🔃 Ordenar por:</span>
+            <select 
+              value={orden} 
+              onChange={e => setOrden(e.target.value)} 
+              className="p-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:ring-1 focus:ring-green-500 focus:outline-none cursor-pointer"
+            >
+              <option value="">Relevancia</option>
+              <option value="precio_asc">Menor a mayor precio</option>
+              <option value="precio_desc">Mayor a menor precio</option>
+              <option value="az">Nombre (A - Z)</option>
+              <option value="za">Nombre (Z - A)</option>
+            </select>
+          </div>
+        </div>
+
+        {(precioMin || precioMax || orden || busqueda) && (
+          <button 
+            onClick={limpiarFiltros} 
+            className="text-sm text-red-500 font-bold hover:text-red-700 hover:underline transition"
+          >
+            ❌ Limpiar filtros
+          </button>
+        )}
+      </div>
+
+      {/* GRID DE PRODUCTOS */}
       {cargando ? (
         <div className="text-center py-10"><span className="text-xl text-gray-500">Cargando catálogo... ⏳</span></div>
       ) : (
@@ -136,11 +215,18 @@ export default function DashboardCliente({ onAddToCart }) {
         </div>
       )}
 
-      {/* ✅ MENSAJE SI NO HAY RESULTADOS */}
+      {/* MENSAJE SI NO HAY RESULTADOS */}
       {productosFiltrados.length === 0 && !cargando && (
-        <div className="text-center p-10 bg-white rounded-2xl border border-gray-100">
-          <p className="text-4xl mb-3">😕</p>
-          <p className="text-gray-500 font-medium">No encontramos productos con esos filtros.</p>
+        <div className="text-center p-10 bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center">
+          <span className="text-5xl mb-3 block">😕</span>
+          <p className="text-gray-800 font-bold text-lg">No encontramos productos con esos filtros.</p>
+          <p className="text-gray-500">Intenta ampliando el rango de precio o cambiando la categoría.</p>
+          <button 
+            onClick={limpiarFiltros}
+            className="mt-4 px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold transition"
+          >
+            Ver todos los productos
+          </button>
         </div>
       )}
     </div>
