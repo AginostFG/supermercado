@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+// ✅ NUEVO: Importamos el componente (Asegúrate de que la ruta sea la correcta según tus carpetas)
+import NotificacionesModal from './components/NotificacionesModal'; 
 
 const API = 'https://supermercado-5759.onrender.com';
 const HEADERS = { 'Content-Type': 'application/json', 'x-rol': '2' };
@@ -10,9 +12,10 @@ export default function DashboardAdmin() {
     const [listaCategorias, setListaCategorias] = useState([]); 
     const [modal, setModal] = useState({ abierto: false, tipo: 'crear', item: null });
     
-    // ✅ Estados y Refs para las alertas y contador de notificaciones (Puntos 4 y 5)
+    // ✅ ACTUALIZADO: Manejo de notificaciones con Array y estado para abrir/cerrar el modal
     const [alertaNuevaOrden, setAlertaNuevaOrden] = useState(false);
-    const [notificaciones, setNotificaciones] = useState(0);
+    const [notificaciones, setNotificaciones] = useState([]); // Ahora es un array
+    const [modalNotiAbierto, setModalNotiAbierto] = useState(false);
     const ultimoIdVentaRef = useRef(null);
 
     const cargarDatos = async (esPolling = false) => {
@@ -26,12 +29,22 @@ export default function DashboardAdmin() {
             const result = await res.json();
             const newData = Array.isArray(result) ? result : [];
             
-            // ✅ Lógica de detección de nuevas ventas con incremento de contador
+            // ✅ ACTUALIZADO: Construimos el objeto de notificación con datos reales
             if (seccion === 'ventas' && newData.length > 0) {
                 const maxId = Math.max(...newData.map(v => v.id));
+                
                 if (ultimoIdVentaRef.current !== null && maxId > ultimoIdVentaRef.current) {
+                    // Buscamos las órdenes nuevas para sacar el nombre del cliente
+                    const nuevasOrdenes = newData.filter(v => v.id > ultimoIdVentaRef.current);
+                    
+                    const nuevasNotificaciones = nuevasOrdenes.map(orden => ({
+                        id: orden.id + '-' + Date.now(),
+                        mensaje: `¡Nueva orden #${orden.id} recibida de ${orden.cliente_nombre || 'un cliente'}!`,
+                        fecha: new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
+                    }));
+
+                    setNotificaciones(prev => [...nuevasNotificaciones, ...prev]);
                     setAlertaNuevaOrden(true);
-                    setNotificaciones(prev => prev + 1); // Incrementa el contador circular
                     setTimeout(() => setAlertaNuevaOrden(false), 8000); 
                 }
                 ultimoIdVentaRef.current = maxId;
@@ -133,7 +146,19 @@ export default function DashboardAdmin() {
     const stats = calcularStatsVentas();
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 p-4 md:p-0">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 p-4 md:p-0 relative">
+            
+            {/* ✅ NUEVO: Instancia del Componente Modal de Notificaciones */}
+            <NotificacionesModal 
+                abierto={modalNotiAbierto} 
+                onClose={() => setModalNotiAbierto(false)} 
+                notificaciones={notificaciones}
+                limpiarNotificaciones={() => {
+                    setNotificaciones([]);
+                    setModalNotiAbierto(false);
+                }}
+            />
+
             {/* MENÚ LATERAL ADMIN */}
             <div className="md:col-span-1 bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-2 h-fit">
                 <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-2">Panel Admin</h2>
@@ -177,21 +202,21 @@ export default function DashboardAdmin() {
                         
                         {/* CONTENEDOR DE ACCIONES DE PERFIL Y CAMPANA */}
                         <div className="flex items-center gap-3">
-                            {/* ✅ BOTÓN CIRCULAR DE NOTIFICACIONES (CAMPANA) */}
+                            {/* ✅ ACTUALIZADO: Botón que abre el nuevo componente modal */}
                             <button 
-                                onClick={() => setNotificaciones(0)} // Limpia las notificaciones al hacer clic
+                                onClick={() => setModalNotiAbierto(true)}
                                 className="relative w-12 h-12 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center hover:bg-gray-100 transition active:scale-95 group"
-                                title="Notificaciones de nuevos pedidos"
+                                title="Ver Notificaciones"
                             >
                                 <span className="text-xl group-hover:animate-bounce">🔔</span>
-                                {notificaciones > 0 && (
+                                {notificaciones.length > 0 && (
                                     <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center border-2 border-white shadow-sm">
-                                        {notificaciones > 99 ? '+99' : notificaciones}
+                                        {notificaciones.length > 99 ? '+99' : notificaciones.length}
                                     </span>
                                 )}
                             </button>
 
-                            {/* ✅ BOTÓN DE PERFIL DE ADMIN */}
+                            {/* BOTÓN DE PERFIL DE ADMIN */}
                             <button className="flex items-center gap-2 p-1.5 pr-4 rounded-full bg-gray-50 border border-gray-200 hover:bg-gray-100 transition active:scale-95">
                                 <div className="w-8 h-8 rounded-full bg-green-600 text-white font-bold flex items-center justify-center text-sm">
                                     A
