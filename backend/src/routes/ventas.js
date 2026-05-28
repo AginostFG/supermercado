@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
-// Ruta: /api/admin/ventas
+// Ruta: /api/admin/ventas (Para el Dashboard Admin)
 router.get('/ventas', async (req, res) => {
   const periodo = req.query.periodo || 'diario';
   let filtroFecha = '';
@@ -36,6 +36,30 @@ router.get('/ventas', async (req, res) => {
     `;
     
     const [rows] = await db.query(query);
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// NUEVA RUTA: Para obtener el historial de compras de un cliente específico en su perfil
+router.get('/usuario/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const query = `
+      SELECT 
+        v.id AS orden_id, 
+        v.fecha_venta, 
+        v.total, 
+        v.direccion, 
+        v.metodo_pago,
+        (SELECT SUM(cantidad) FROM venta_detalles WHERE venta_id = v.id) AS cantidad_productos
+      FROM ventas v
+      WHERE v.usuario_id = ?
+      ORDER BY v.fecha_venta DESC
+    `;
+    const [rows] = await db.query(query, [id]);
     res.json(rows);
   } catch (err) {
     console.error(err);

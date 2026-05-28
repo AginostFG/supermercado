@@ -5,7 +5,7 @@ const HEADERS = { 'Content-Type': 'application/json', 'x-rol': '2' };
 
 export default function DashboardAdmin() {
     const [seccion, setSeccion] = useState('usuarios');
-    const [periodoVentas, setPeriodoVentas] = useState('diario'); // Nuevo estado para los filtros
+    const [periodoVentas, setPeriodoVentas] = useState('diario');
     const [data, setData] = useState([]);
     const [listaCategorias, setListaCategorias] = useState([]); 
     const [modal, setModal] = useState({ abierto: false, tipo: 'crear', item: null });
@@ -14,7 +14,7 @@ export default function DashboardAdmin() {
         let url = '/api/admin/usuarios';
         if (seccion === 'inventario') url = '/api/productos';
         if (seccion === 'categorias') url = '/api/admin/categorias';
-        if (seccion === 'ventas') url = `/api/admin/ventas?periodo=${periodoVentas}`; // URL preparada para el backend
+        if (seccion === 'ventas') url = `/api/admin/ventas?periodo=${periodoVentas}`;
 
         try {
             const res = await fetch(`${API}${url}`, { headers: HEADERS });
@@ -22,7 +22,6 @@ export default function DashboardAdmin() {
             setData(Array.isArray(result) ? result : []);
         } catch (error) { setData([]); }
 
-        // Cargar categorías para el select del formulario
         if (seccion === 'inventario') {
             try {
                 const resCat = await fetch(`${API}/api/admin/categorias`, { headers: HEADERS });
@@ -89,13 +88,13 @@ export default function DashboardAdmin() {
         }
     };
 
-    // Función simulada para calcular estadísticas visuales rápidas en la sección de ventas
+    // SOLUCIÓN: Convertir explícitamente a Number para evitar concatenación de strings
     const calcularStatsVentas = () => {
         if (seccion !== 'ventas') return { ingresos: 0, ordenes: 0, items: 0 };
         return {
-            ingresos: data.reduce((sum, v) => sum + (v.total || 0), 0),
+            ingresos: data.reduce((sum, v) => sum + (Number(v.total) || 0), 0),
             ordenes: data.length,
-            items: data.reduce((sum, v) => sum + (v.cantidad_total || 0), 0)
+            items: data.reduce((sum, v) => sum + (Number(v.cantidad_total) || 0), 0)
         };
     };
 
@@ -207,7 +206,7 @@ export default function DashboardAdmin() {
                 </div>
             </div>
 
-            {/* MODAL DE FORMULARIOS (Mantenido intacto) */}
+            {/* MODAL DE FORMULARIOS */}
             {modal.abierto && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl">
