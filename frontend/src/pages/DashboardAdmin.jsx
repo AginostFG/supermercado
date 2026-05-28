@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import NotificacionesModal from './components/NotificacionesModal'; 
+import NotificacionesModal from '../components/NotificacionesModal';
 
 const API = 'https://supermercado-5759.onrender.com';
 const HEADERS = { 'Content-Type': 'application/json', 'x-rol': '2' };
