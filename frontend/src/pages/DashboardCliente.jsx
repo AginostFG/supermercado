@@ -12,7 +12,7 @@ export default function DashboardCliente({ onAddToCart }) {
   const [busqueda, setBusqueda] = useState('');
   const [categoriaActiva, setCategoriaActiva] = useState('');
   
-  // ✅ NUEVOS estados para filtros avanzados
+  // ✅ Estados para filtros avanzados
   const [precioMin, setPrecioMin] = useState('');
   const [precioMax, setPrecioMax] = useState('');
   const [orden, setOrden] = useState(''); // 'precio_asc', 'precio_desc', 'az', 'za'
@@ -46,11 +46,9 @@ export default function DashboardCliente({ onAddToCart }) {
 
   // ✅ Lógica MEJORADA para filtrar y ordenar productos en tiempo real
   let productosFiltrados = productos.filter(producto => {
-    // Filtro por texto
     const coincideBusqueda = producto.nombre.toLowerCase().includes(busqueda.toLowerCase());
-    // Filtro por categoría
     const coincideCategoria = categoriaActiva === '' || producto.categoria_id === parseInt(categoriaActiva);
-    // Filtros por precio
+    
     const precio = Number(producto.precio);
     const coincidePrecioMin = precioMin === '' || precio >= Number(precioMin);
     const coincidePrecioMax = precioMax === '' || precio <= Number(precioMax);
@@ -69,7 +67,6 @@ export default function DashboardCliente({ onAddToCart }) {
     productosFiltrados.sort((a, b) => b.nombre.localeCompare(a.nombre));
   }
 
-  // Función para limpiar filtros avanzados
   const limpiarFiltros = () => {
     setPrecioMin('');
     setPrecioMax('');
@@ -126,24 +123,32 @@ export default function DashboardCliente({ onAddToCart }) {
         ))}
       </div>
 
-      {/* ✅ NUEVA BARRA DE FILTROS AVANZADOS */}
+      {/* BARRA DE FILTROS AVANZADOS CORREGIDA */}
       <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-wrap gap-4 items-center justify-between">
         <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
           <div className="flex items-center gap-2">
             <span className="text-gray-600 font-medium text-sm">💰 Precio:</span>
             <input 
               type="number" 
+              min="0"
               placeholder="Min" 
               value={precioMin} 
-              onChange={e => setPrecioMin(e.target.value)} 
+              onChange={e => {
+                const val = e.target.value;
+                if (val === '' || Number(val) >= 0) setPrecioMin(val);
+              }} 
               className="w-24 p-2 border border-gray-200 rounded-lg text-sm focus:ring-1 focus:ring-green-500 focus:outline-none" 
             />
             <span className="text-gray-400">-</span>
             <input 
               type="number" 
+              min="0"
               placeholder="Max" 
               value={precioMax} 
-              onChange={e => setPrecioMax(e.target.value)} 
+              onChange={e => {
+                const val = e.target.value;
+                if (val === '' || Number(val) >= 0) setPrecioMax(val);
+              }} 
               className="w-24 p-2 border border-gray-200 rounded-lg text-sm focus:ring-1 focus:ring-green-500 focus:outline-none" 
             />
           </div>
