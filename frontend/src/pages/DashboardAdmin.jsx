@@ -1,34 +1,21 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import NotificacionesModal from '../components/NotificacionesModal';
-import RegisterModal from '../components/RegisterModal';
 
 const API = 'https://supermercado-5759.onrender.com';
 const HEADERS = { 'Content-Type': 'application/json', 'x-rol': '2' };
 
 export default function DashboardAdmin() {
-    const navigate = useNavigate();
-
     const [seccion, setSeccion] = useState('usuarios');
     const [periodoVentas, setPeriodoVentas] = useState('diario');
     const [data, setData] = useState([]);
-    const [listaCategorias, setListaCategorias] = useState([]);
+    const [listaCategorias, setListaCategorias] = useState([]); 
     const [modal, setModal] = useState({ abierto: false, tipo: 'crear', item: null });
-
+    
     const [alertaNuevaOrden, setAlertaNuevaOrden] = useState(false);
-    const [notificaciones, setNotificaciones] = useState([]);
+    const [notificaciones, setNotificaciones] = useState([]); 
     const [modalNotiAbierto, setModalNotiAbierto] = useState(false);
-    const [registerModalAbierto, setRegisterModalAbierto] = useState(false);
     const ultimoIdVentaRef = useRef(null);
 
-    // ── CERRAR SESIÓN ──────────────────────────────────────────────
-    const handleLogout = () => {
-        localStorage.clear();
-        sessionStorage.clear();
-        navigate('/login');
-    };
-
-    // ── CARGA DE DATOS ─────────────────────────────────────────────
     const cargarDatos = async (esPolling = false) => {
         let url = '/api/admin/usuarios';
         if (seccion === 'inventario') url = '/api/productos';
@@ -39,27 +26,31 @@ export default function DashboardAdmin() {
             const res = await fetch(`${API}${url}`, { headers: HEADERS });
             const result = await res.json();
             const newData = Array.isArray(result) ? result : [];
-
+            
+            // ✅ Construimos el objeto de notificación con datos reales
             if (seccion === 'ventas' && newData.length > 0) {
                 const maxId = Math.max(...newData.map(v => v.id));
-
+                
                 if (ultimoIdVentaRef.current !== null && maxId > ultimoIdVentaRef.current) {
+                    // Buscamos las órdenes nuevas para sacar el nombre del cliente
                     const nuevasOrdenes = newData.filter(v => v.id > ultimoIdVentaRef.current);
+                    
                     const nuevasNotificaciones = nuevasOrdenes.map(orden => ({
                         id: orden.id + '-' + Date.now(),
                         mensaje: `¡Nueva orden #${orden.id} recibida de ${orden.cliente_nombre || 'un cliente'}!`,
                         fecha: new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
                     }));
+
                     setNotificaciones(prev => [...nuevasNotificaciones, ...prev]);
                     setAlertaNuevaOrden(true);
-                    setTimeout(() => setAlertaNuevaOrden(false), 8000);
+                    setTimeout(() => setAlertaNuevaOrden(false), 8000); 
                 }
                 ultimoIdVentaRef.current = maxId;
             }
 
             setData(newData);
-        } catch (error) {
-            if (!esPolling) setData([]);
+        } catch (error) { 
+            if (!esPolling) setData([]); 
         }
 
         if (seccion === 'inventario' && !esPolling) {
@@ -71,21 +62,25 @@ export default function DashboardAdmin() {
         }
     };
 
-    useEffect(() => { cargarDatos(); }, [seccion, periodoVentas]);
+    useEffect(() => { 
+        cargarDatos(); 
+    }, [seccion, periodoVentas]);
 
+    // Polling cada 15 segundos para alertar nuevos pedidos
     useEffect(() => {
         let intervalo;
         if (seccion === 'ventas') {
-            intervalo = setInterval(() => cargarDatos(true), 15000);
+            intervalo = setInterval(() => {
+                cargarDatos(true);
+            }, 15000);
         }
         return () => clearInterval(intervalo);
     }, [seccion, periodoVentas]);
 
-    // ── ELIMINAR ───────────────────────────────────────────────────
     const handleEliminar = async (id, nombre) => {
         const confirmar = confirm(`¿Estás seguro de que deseas eliminar "${nombre}"?`);
         if (!confirmar) return;
-
+        
         let ruta = 'usuarios';
         if (seccion === 'inventario') ruta = 'productos';
         if (seccion === 'categorias') ruta = 'categorias';
@@ -94,37 +89,40 @@ export default function DashboardAdmin() {
         cargarDatos();
     };
 
-    // ── GUARDAR (editar / crear inventario & categorías) ───────────
     const handleGuardar = async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
         const itemData = Object.fromEntries(formData.entries());
 
         let url = '';
-        const metodo = modal.tipo === 'editar' ? 'PUT' : 'POST';
+        let metodo = modal.tipo === 'editar' ? 'PUT' : 'POST';
 
         if (seccion === 'categorias') {
-            url = modal.tipo === 'editar'
-                ? `${API}/api/admin/categorias/${modal.item.id}`
-                : `${API}/api/admin/categorias`;
+            url = modal.tipo === 'editar' ? `${API}/api/admin/categorias/${modal.item.id}` : `${API}/api/admin/categorias`;
         } else {
             if (itemData.stock !== undefined) {
                 itemData.stock = parseInt(itemData.stock);
-                if (itemData.stock < 0) return alert('El stock no puede ser negativo.');
+                if (itemData.stock < 0) return alert("El stock no puede ser negativo.");
             }
             if (itemData.precio !== undefined) {
                 itemData.precio = parseFloat(itemData.precio);
-                if (itemData.precio < 0) return alert('El precio no puede ser negativo.');
+                if (itemData.precio < 0) return alert("El precio no puede ser negativo.");
             }
             if (itemData.categoria_id !== undefined) {
                 itemData.categoria_id = parseInt(itemData.categoria_id);
             }
+
             url = modal.tipo === 'editar'
                 ? `${API}/api/admin/${seccion === 'usuarios' ? 'usuarios' : 'productos'}/${modal.item.id}`
                 : `${API}/api/admin/productos`;
         }
 
-        const res = await fetch(url, { method: metodo, headers: HEADERS, body: JSON.stringify(itemData) });
+        const res = await fetch(url, {
+            method: metodo,
+            headers: HEADERS,
+            body: JSON.stringify(itemData)
+        });
+
         if (res.ok) {
             setModal({ abierto: false, tipo: 'crear', item: null });
             cargarDatos();
@@ -134,37 +132,6 @@ export default function DashboardAdmin() {
         }
     };
 
-    // ── REGISTRAR NUEVO USUARIO (desde RegisterModal) ──────────────
-    const handleRegisterUser = async (formData) => {
-        const { confirmPassword, ...dataToSend } = formData;
-        try {
-            const res = await fetch(`${API}/api/admin/usuarios`, {
-                method: 'POST',
-                headers: HEADERS,
-                body: JSON.stringify(dataToSend)
-            });
-            if (res.ok) {
-                setRegisterModalAbierto(false);
-                cargarDatos();
-            } else {
-                const err = await res.json();
-                alert(`Error al registrar: ${err.error || 'Intenta de nuevo.'}`);
-            }
-        } catch (error) {
-            alert('Error de conexión al registrar usuario.');
-        }
-    };
-
-    // ── BOTÓN "+ AÑADIR NUEVO" ─────────────────────────────────────
-    const handleAbrirCrear = () => {
-        if (seccion === 'usuarios') {
-            setRegisterModalAbierto(true);
-        } else {
-            setModal({ abierto: true, tipo: 'crear', item: null });
-        }
-    };
-
-    // ── STATS VENTAS ───────────────────────────────────────────────
     const calcularStatsVentas = () => {
         if (seccion !== 'ventas') return { ingresos: 0, ordenes: 0, items: 0 };
         return {
@@ -178,25 +145,11 @@ export default function DashboardAdmin() {
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 p-4 md:p-0 relative">
-
-            {/* ── CAMPANA FIJA ESQUINA SUPERIOR DERECHA ── */}
-            <button
-                onClick={() => setModalNotiAbierto(true)}
-                className="fixed top-4 right-4 z-40 w-11 h-11 rounded-full bg-yellow-50 border border-yellow-200 flex items-center justify-center hover:bg-yellow-100 transition active:scale-95 shadow-md group"
-                title="Ver Notificaciones"
-            >
-                <span className="text-xl group-hover:animate-bounce">🔔</span>
-                {notificaciones.length > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center border-2 border-white shadow-sm">
-                        {notificaciones.length > 99 ? '+99' : notificaciones.length}
-                    </span>
-                )}
-            </button>
-
-            {/* Modal de Notificaciones */}
-            <NotificacionesModal
-                abierto={modalNotiAbierto}
-                onClose={() => setModalNotiAbierto(false)}
+            
+            {/* Instancia del Componente Modal de Notificaciones */}
+            <NotificacionesModal 
+                abierto={modalNotiAbierto} 
+                onClose={() => setModalNotiAbierto(false)} 
                 notificaciones={notificaciones}
                 limpiarNotificaciones={() => {
                     setNotificaciones([]);
@@ -204,33 +157,20 @@ export default function DashboardAdmin() {
                 }}
             />
 
-            {/* Modal de Registro de Usuario */}
-            {registerModalAbierto && (
-                <RegisterModal
-                    onClose={() => setRegisterModalAbierto(false)}
-                    onRegister={handleRegisterUser}
-                    onSwitchToLogin={() => setRegisterModalAbierto(false)}
-                />
-            )}
-
-            {/* ── MENÚ LATERAL ── */}
+            {/* MENÚ LATERAL ADMIN */}
             <div className="md:col-span-1 bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-2 h-fit">
                 <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-2">Panel Admin</h2>
                 {['usuarios', 'inventario', 'categorias', 'ventas'].map(s => (
-                    <button
-                        key={s}
-                        onClick={() => setSeccion(s)}
-                        className={`w-full text-left px-4 py-3 rounded-xl font-semibold capitalize transition ${seccion === s ? 'bg-green-50 text-green-700' : 'text-gray-600 hover:bg-gray-50'}`}
-                    >
+                    <button key={s} onClick={() => setSeccion(s)} className={`w-full text-left px-4 py-3 rounded-xl font-semibold capitalize transition ${seccion === s ? 'bg-green-50 text-green-700' : 'text-gray-600 hover:bg-gray-50'}`}>
                         {s === 'usuarios' ? '👥' : s === 'inventario' ? '📦' : s === 'categorias' ? '🏷️' : '📊'} {s}
                     </button>
                 ))}
             </div>
 
-            {/* ── CONTENIDO PRINCIPAL ── */}
+            {/* CONTENIDO PRINCIPAL */}
             <div className="md:col-span-3 space-y-6">
-
-                {/* Banner alerta nuevo pedido */}
+                
+                {/* BANNER DE ALERTA NUEVO PEDIDO */}
                 {alertaNuevaOrden && seccion === 'ventas' && (
                     <div className="bg-blue-600 text-white p-4 rounded-xl shadow-md flex justify-between items-center animate-pulse">
                         <div className="flex items-center gap-3">
@@ -244,40 +184,50 @@ export default function DashboardAdmin() {
                     </div>
                 )}
 
-                {/* ── CABECERA ── */}
+                {/* CABECERA CON BOTÓN DE NOTIFICACIONES Y PERFIL */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100 gap-4">
                     <div>
                         <h1 className="text-2xl font-black text-gray-800 capitalize">Gestión de {seccion}</h1>
                         <p className="text-gray-500 text-sm">Administra tu plataforma en tiempo real.</p>
                     </div>
-
-                    <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-                        {/* Botón Añadir Nuevo */}
+                    
+                    <div className="flex items-center gap-4 w-full sm:w-auto justify-end">
                         {seccion !== 'ventas' && (
-                            <button
-                                onClick={handleAbrirCrear}
-                                className="bg-green-600 hover:bg-green-700 text-white font-bold px-5 py-3 rounded-xl shadow-sm transition active:scale-95 text-sm"
-                            >
+                            <button onClick={() => setModal({ abierto: true, tipo: 'crear', item: null })} className="bg-green-600 hover:bg-green-700 text-white font-bold px-5 py-3 rounded-xl shadow-sm transition active:scale-95 text-sm">
                                 + Añadir Nuevo
                             </button>
                         )}
+                        
+                        {/* 🔔 AQUÍ ESTÁN JUNTOS LA CAMPANA Y EL PERFIL 👥 */}
+                        <div className="flex items-center gap-3">
+                            
+                            {/* Botón de la Campana */}
+                            <button 
+                                onClick={() => setModalNotiAbierto(true)}
+                                className="relative w-12 h-12 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center hover:bg-gray-100 transition active:scale-95 group"
+                                title="Ver Notificaciones"
+                            >
+                                <span className="text-xl group-hover:animate-bounce">🔔</span>
+                                {notificaciones.length > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center border-2 border-white shadow-sm">
+                                        {notificaciones.length > 99 ? '+99' : notificaciones.length}
+                                    </span>
+                                )}
+                            </button>
 
-                        {/* Avatar */}
-                        <button className="w-10 h-10 rounded-full bg-green-600 text-white font-bold flex items-center justify-center text-sm hover:bg-green-700 transition active:scale-95 border-2 border-white shadow-sm">
-                            A
-                        </button>
+                            {/* Botón de Perfil Admin */}
+                            <button className="flex items-center gap-2 p-1.5 pr-4 rounded-full bg-gray-50 border border-gray-200 hover:bg-gray-100 transition active:scale-95">
+                                <div className="w-8 h-8 rounded-full bg-green-600 text-white font-bold flex items-center justify-center text-sm">
+                                    A
+                                </div>
+                                <span className="text-sm font-bold text-gray-700 hidden sm:inline">Perfil Admin</span>
+                            </button>
+                        </div>
 
-                        {/* Botón Salir */}
-                        <button
-                            onClick={handleLogout}
-                            className="text-sm font-semibold text-gray-500 hover:text-red-500 transition px-2 py-1 rounded-lg hover:bg-red-50"
-                        >
-                            Salir
-                        </button>
                     </div>
                 </div>
 
-                {/* Estadísticas de Ventas */}
+                {/* TARJETAS DE ESTADÍSTICAS Y FILTROS (Solo en Ventas) */}
                 {seccion === 'ventas' && (
                     <div className="space-y-6">
                         <div className="bg-white p-2 rounded-xl shadow-sm border border-gray-100 flex gap-1 overflow-x-auto">
@@ -291,6 +241,7 @@ export default function DashboardAdmin() {
                                 </button>
                             ))}
                         </div>
+
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
                                 <p className="text-gray-500 text-sm font-semibold mb-1">Ingresos Totales</p>
@@ -308,7 +259,7 @@ export default function DashboardAdmin() {
                     </div>
                 )}
 
-                {/* ── TABLA ── */}
+                {/* TABLA DE DATOS */}
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
@@ -325,16 +276,14 @@ export default function DashboardAdmin() {
                                 ) : data.map((item, index) => (
                                     <tr key={item.id || index} className="hover:bg-gray-50/50">
                                         <td className="p-4 pl-6 font-bold">
-                                            {seccion === 'categorias' ? `#${item.id}`
-                                                : seccion === 'ventas' ? `Orden #${item.id || index + 100}`
-                                                : (
-                                                    <div className="flex items-center gap-3">
-                                                        {seccion === 'inventario' && item.imagen_url && (
-                                                            <img src={item.imagen_url} alt="img" className="w-10 h-10 rounded-xl object-cover bg-gray-100" />
-                                                        )}
-                                                        <span>{item.nombre || item.cliente_nombre} {item.apellidos || ''}</span>
-                                                    </div>
-                                                )}
+                                            {seccion === 'categorias' ? `#${item.id}` : seccion === 'ventas' ? `Orden #${item.id || index + 100}` : (
+                                                <div className="flex items-center gap-3">
+                                                    {seccion === 'inventario' && item.imagen_url && (
+                                                        <img src={item.imagen_url} alt="img" className="w-10 h-10 rounded-xl object-cover bg-gray-100" />
+                                                    )}
+                                                    <span>{item.nombre || item.cliente_nombre} {item.apellidos || ""}</span>
+                                                </div>
+                                            )}
                                         </td>
                                         <td className="p-4 text-gray-600 font-medium">
                                             {seccion === 'usuarios' ? item.correo
@@ -364,14 +313,15 @@ export default function DashboardAdmin() {
                 </div>
             </div>
 
-            {/* ── MODAL FORMULARIOS / DETALLES ── */}
+            {/* MODAL DE FORMULARIOS / DETALLES */}
             {modal.abierto && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl">
                         <div className={`p-6 text-white font-bold text-center text-xl ${modal.tipo === 'detalle_venta' ? 'bg-purple-600' : 'bg-green-600'}`}>
                             {modal.tipo === 'editar' ? '✏️ Editar Registro' : modal.tipo === 'detalle_venta' ? '🧾 Ticket de Venta' : '➕ Nuevo Registro'}
                         </div>
-
+                        
+                        {/* VISTA DEL TICKET DEL PEDIDO */}
                         {modal.tipo === 'detalle_venta' ? (
                             <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto text-sm text-gray-700">
                                 <div className="flex justify-between border-b border-gray-100 pb-2">
@@ -398,15 +348,18 @@ export default function DashboardAdmin() {
                                     <span className="font-medium text-gray-500">Total de Artículos:</span>
                                     <span className="font-bold">{modal.item?.cantidad_total || 0} unidades</span>
                                 </div>
+                                
                                 <div className="flex justify-between bg-green-50 p-4 rounded-xl mt-4 items-center">
                                     <span className="text-green-800 font-black text-lg">Total Pagado:</span>
                                     <span className="text-green-800 font-black text-2xl">${Number(modal.item?.total || 0).toLocaleString('es-CO')}</span>
                                 </div>
+
                                 <button onClick={() => setModal({ abierto: false, tipo: 'crear', item: null })} className="w-full mt-4 bg-gray-100 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-200 transition">
                                     Cerrar Ticket
                                 </button>
                             </div>
                         ) : (
+                            /* RESTO DE LOS FORMULARIOS DE CREAR/EDITAR */
                             <form onSubmit={handleGuardar} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
                                 {seccion === 'categorias' && (
                                     <div>
@@ -414,6 +367,7 @@ export default function DashboardAdmin() {
                                         <input name="nombre" defaultValue={modal.item?.nombre} placeholder="Ej. Frutas y Verduras" className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:outline-none" required />
                                     </div>
                                 )}
+
                                 {seccion === 'inventario' && (
                                     <div className="space-y-4">
                                         <div>
@@ -445,6 +399,7 @@ export default function DashboardAdmin() {
                                         </div>
                                     </div>
                                 )}
+
                                 {seccion === 'usuarios' && (
                                     <div className="space-y-4">
                                         <div className="grid grid-cols-2 gap-3">
@@ -471,9 +426,14 @@ export default function DashboardAdmin() {
                                         </div>
                                     </div>
                                 )}
+
                                 <div className="flex gap-3 pt-4 border-t border-gray-100">
-                                    <button type="submit" className="flex-1 bg-green-600 text-white py-3.5 rounded-xl font-bold hover:bg-green-700 transition shadow-sm">Guardar</button>
-                                    <button type="button" onClick={() => setModal({ abierto: false, tipo: 'crear', item: null })} className="flex-1 bg-gray-100 text-gray-700 py-3.5 rounded-xl font-bold hover:bg-gray-200 transition">Cancelar</button>
+                                    <button type="submit" className="flex-1 bg-green-600 text-white py-3.5 rounded-xl font-bold hover:bg-green-700 transition shadow-sm">
+                                        Guardar
+                                    </button>
+                                    <button type="button" onClick={() => setModal({ abierto: false, tipo: 'crear', item: null })} className="flex-1 bg-gray-100 text-gray-700 py-3.5 rounded-xl font-bold hover:bg-gray-200 transition">
+                                        Cancelar
+                                    </button>
                                 </div>
                             </form>
                         )}
