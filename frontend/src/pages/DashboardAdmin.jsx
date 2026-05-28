@@ -10,8 +10,9 @@ export default function DashboardAdmin() {
     const [listaCategorias, setListaCategorias] = useState([]); 
     const [modal, setModal] = useState({ abierto: false, tipo: 'crear', item: null });
     
-    // ✅ Estados y Refs para las alertas de nuevos pedidos (Punto 5)
+    // ✅ Estados y Refs para las alertas y contador de notificaciones (Puntos 4 y 5)
     const [alertaNuevaOrden, setAlertaNuevaOrden] = useState(false);
+    const [notificaciones, setNotificaciones] = useState(0);
     const ultimoIdVentaRef = useRef(null);
 
     const cargarDatos = async (esPolling = false) => {
@@ -25,12 +26,13 @@ export default function DashboardAdmin() {
             const result = await res.json();
             const newData = Array.isArray(result) ? result : [];
             
-            // Lógica para detectar nuevas ventas sin romper lo existente
+            // ✅ Lógica de detección de nuevas ventas con incremento de contador
             if (seccion === 'ventas' && newData.length > 0) {
                 const maxId = Math.max(...newData.map(v => v.id));
                 if (ultimoIdVentaRef.current !== null && maxId > ultimoIdVentaRef.current) {
                     setAlertaNuevaOrden(true);
-                    setTimeout(() => setAlertaNuevaOrden(false), 8000); // Ocultar después de 8 seg
+                    setNotificaciones(prev => prev + 1); // Incrementa el contador circular
+                    setTimeout(() => setAlertaNuevaOrden(false), 8000); 
                 }
                 ultimoIdVentaRef.current = maxId;
             }
@@ -49,18 +51,17 @@ export default function DashboardAdmin() {
         }
     };
 
-    // Carga inicial y cambio de sección
     useEffect(() => { 
         cargarDatos(); 
     }, [seccion, periodoVentas]);
 
-    // ✅ Polling silencioso cada 15 segundos para detectar nuevas órdenes
+    // Polling cada 15 segundos para alertar nuevos pedidos
     useEffect(() => {
         let intervalo;
         if (seccion === 'ventas') {
             intervalo = setInterval(() => {
                 cargarDatos(true);
-            }, 15000); // 15 segundos
+            }, 15000);
         }
         return () => clearInterval(intervalo);
     }, [seccion, periodoVentas]);
@@ -146,7 +147,7 @@ export default function DashboardAdmin() {
             {/* CONTENIDO PRINCIPAL */}
             <div className="md:col-span-3 space-y-6">
                 
-                {/* ✅ BANNER DE ALERTA NUEVO PEDIDO */}
+                {/* BANNER DE ALERTA NUEVO PEDIDO */}
                 {alertaNuevaOrden && seccion === 'ventas' && (
                     <div className="bg-blue-600 text-white p-4 rounded-xl shadow-md flex justify-between items-center animate-pulse">
                         <div className="flex items-center gap-3">
@@ -160,16 +161,45 @@ export default function DashboardAdmin() {
                     </div>
                 )}
 
+                {/* CABECERA CON BOTÓN DE NOTIFICACIONES Y PERFIL */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100 gap-4">
                     <div>
                         <h1 className="text-2xl font-black text-gray-800 capitalize">Gestión de {seccion}</h1>
                         <p className="text-gray-500 text-sm">Administra tu plataforma en tiempo real.</p>
                     </div>
-                    {seccion !== 'ventas' && (
-                        <button onClick={() => setModal({ abierto: true, tipo: 'crear', item: null })} className="bg-green-600 hover:bg-green-700 text-white font-bold px-5 py-3 rounded-xl shadow-sm transition active:scale-95">
-                            + Añadir Nuevo
-                        </button>
-                    )}
+                    
+                    <div className="flex items-center gap-4 w-full sm:w-auto justify-end">
+                        {seccion !== 'ventas' && (
+                            <button onClick={() => setModal({ abierto: true, tipo: 'crear', item: null })} className="bg-green-600 hover:bg-green-700 text-white font-bold px-5 py-3 rounded-xl shadow-sm transition active:scale-95 text-sm">
+                                + Añadir Nuevo
+                            </button>
+                        )}
+                        
+                        {/* CONTENEDOR DE ACCIONES DE PERFIL Y CAMPANA */}
+                        <div className="flex items-center gap-3">
+                            {/* ✅ BOTÓN CIRCULAR DE NOTIFICACIONES (CAMPANA) */}
+                            <button 
+                                onClick={() => setNotificaciones(0)} // Limpia las notificaciones al hacer clic
+                                className="relative w-12 h-12 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center hover:bg-gray-100 transition active:scale-95 group"
+                                title="Notificaciones de nuevos pedidos"
+                            >
+                                <span className="text-xl group-hover:animate-bounce">🔔</span>
+                                {notificaciones > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center border-2 border-white shadow-sm">
+                                        {notificaciones > 99 ? '+99' : notificaciones}
+                                    </span>
+                                )}
+                            </button>
+
+                            {/* ✅ BOTÓN DE PERFIL DE ADMIN */}
+                            <button className="flex items-center gap-2 p-1.5 pr-4 rounded-full bg-gray-50 border border-gray-200 hover:bg-gray-100 transition active:scale-95">
+                                <div className="w-8 h-8 rounded-full bg-green-600 text-white font-bold flex items-center justify-center text-sm">
+                                    A
+                                </div>
+                                <span className="text-sm font-bold text-gray-700 hidden sm:inline">Perfil Admin</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 {/* TARJETAS DE ESTADÍSTICAS Y FILTROS (Solo en Ventas) */}
@@ -243,7 +273,6 @@ export default function DashboardAdmin() {
                                                     <button onClick={() => handleEliminar(item.id, item.nombre)} className="bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold transition">Eliminar</button>
                                                 </div>
                                             ) : (
-                                                /* ✅ PUNTO 6: BOTÓN VER DETALLES DE VENTA */
                                                 <div className="flex justify-end gap-2">
                                                     <button onClick={() => setModal({ abierto: true, tipo: 'detalle_venta', item })} className="bg-purple-50 text-purple-600 hover:bg-purple-100 px-3 py-1.5 rounded-lg text-xs font-bold transition">
                                                         Ver Detalles
@@ -267,7 +296,7 @@ export default function DashboardAdmin() {
                             {modal.tipo === 'editar' ? '✏️ Editar Registro' : modal.tipo === 'detalle_venta' ? '🧾 Ticket de Venta' : '➕ Nuevo Registro'}
                         </div>
                         
-                        {/* ✅ PUNTO 6: VISTA DEL TICKET DEL PEDIDO */}
+                        {/* VISTA DEL TICKET DEL PEDIDO */}
                         {modal.tipo === 'detalle_venta' ? (
                             <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto text-sm text-gray-700">
                                 <div className="flex justify-between border-b border-gray-100 pb-2">
