@@ -27,12 +27,10 @@ export default function DashboardAdmin() {
             const result = await res.json();
             const newData = Array.isArray(result) ? result : [];
             
-            // ✅ Construimos el objeto de notificación con datos reales
             if (seccion === 'ventas' && newData.length > 0) {
                 const maxId = Math.max(...newData.map(v => v.id));
                 
                 if (ultimoIdVentaRef.current !== null && maxId > ultimoIdVentaRef.current) {
-                    // Buscamos las órdenes nuevas para sacar el nombre del cliente
                     const nuevasOrdenes = newData.filter(v => v.id > ultimoIdVentaRef.current);
                     
                     const nuevasNotificaciones = nuevasOrdenes.map(orden => ({
@@ -66,7 +64,6 @@ export default function DashboardAdmin() {
         cargarDatos(); 
     }, [seccion, periodoVentas]);
 
-    // Polling cada 15 segundos para alertar nuevos pedidos
     useEffect(() => {
         let intervalo;
         if (seccion === 'ventas') {
@@ -146,7 +143,21 @@ export default function DashboardAdmin() {
     return (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 p-4 md:p-0 relative">
             
-            {/* Instancia del Componente Modal de Notificaciones */}
+            {/* ── CAMPANA FIJA EN ESQUINA SUPERIOR DERECHA ── */}
+            <button
+                onClick={() => setModalNotiAbierto(true)}
+                className="fixed top-4 right-4 z-40 w-11 h-11 rounded-full bg-yellow-50 border border-yellow-200 flex items-center justify-center hover:bg-yellow-100 transition active:scale-95 shadow-md group"
+                title="Ver Notificaciones"
+            >
+                <span className="text-xl group-hover:animate-bounce">🔔</span>
+                {notificaciones.length > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center border-2 border-white shadow-sm">
+                        {notificaciones.length > 99 ? '+99' : notificaciones.length}
+                    </span>
+                )}
+            </button>
+
+            {/* Modal de Notificaciones */}
             <NotificacionesModal 
                 abierto={modalNotiAbierto} 
                 onClose={() => setModalNotiAbierto(false)} 
@@ -184,7 +195,7 @@ export default function DashboardAdmin() {
                     </div>
                 )}
 
-                {/* CABECERA CON BOTÓN DE NOTIFICACIONES Y PERFIL */}
+                {/* CABECERA */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100 gap-4">
                     <div>
                         <h1 className="text-2xl font-black text-gray-800 capitalize">Gestión de {seccion}</h1>
@@ -197,37 +208,15 @@ export default function DashboardAdmin() {
                                 + Añadir Nuevo
                             </button>
                         )}
-                        
-                        {/* 🔔 AQUÍ ESTÁN JUNTOS LA CAMPANA Y EL PERFIL 👥 */}
-                        <div className="flex items-center gap-3">
-                            
-                            {/* Botón de la Campana */}
-                            <button 
-                                onClick={() => setModalNotiAbierto(true)}
-                                className="relative w-12 h-12 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center hover:bg-gray-100 transition active:scale-95 group"
-                                title="Ver Notificaciones"
-                            >
-                                <span className="text-xl group-hover:animate-bounce">🔔</span>
-                                {notificaciones.length > 0 && (
-                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center border-2 border-white shadow-sm">
-                                        {notificaciones.length > 99 ? '+99' : notificaciones.length}
-                                    </span>
-                                )}
-                            </button>
 
-                            {/* Botón de Perfil Admin */}
-                            <button className="flex items-center gap-2 p-1.5 pr-4 rounded-full bg-gray-50 border border-gray-200 hover:bg-gray-100 transition active:scale-95">
-                                <div className="w-8 h-8 rounded-full bg-green-600 text-white font-bold flex items-center justify-center text-sm">
-                                    A
-                                </div>
-                                <span className="text-sm font-bold text-gray-700 hidden sm:inline">Perfil Admin</span>
-                            </button>
-                        </div>
-
+                        {/* ── SOLO EL AVATAR, SIN TEXTO ── */}
+                        <button className="w-10 h-10 rounded-full bg-green-600 text-white font-bold flex items-center justify-center text-sm hover:bg-green-700 transition active:scale-95 border-2 border-white shadow-sm">
+                            A
+                        </button>
                     </div>
                 </div>
 
-                {/* TARJETAS DE ESTADÍSTICAS Y FILTROS (Solo en Ventas) */}
+                {/* TARJETAS DE ESTADÍSTICAS (Solo en Ventas) */}
                 {seccion === 'ventas' && (
                     <div className="space-y-6">
                         <div className="bg-white p-2 rounded-xl shadow-sm border border-gray-100 flex gap-1 overflow-x-auto">
@@ -321,7 +310,6 @@ export default function DashboardAdmin() {
                             {modal.tipo === 'editar' ? '✏️ Editar Registro' : modal.tipo === 'detalle_venta' ? '🧾 Ticket de Venta' : '➕ Nuevo Registro'}
                         </div>
                         
-                        {/* VISTA DEL TICKET DEL PEDIDO */}
                         {modal.tipo === 'detalle_venta' ? (
                             <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto text-sm text-gray-700">
                                 <div className="flex justify-between border-b border-gray-100 pb-2">
@@ -348,18 +336,15 @@ export default function DashboardAdmin() {
                                     <span className="font-medium text-gray-500">Total de Artículos:</span>
                                     <span className="font-bold">{modal.item?.cantidad_total || 0} unidades</span>
                                 </div>
-                                
                                 <div className="flex justify-between bg-green-50 p-4 rounded-xl mt-4 items-center">
                                     <span className="text-green-800 font-black text-lg">Total Pagado:</span>
                                     <span className="text-green-800 font-black text-2xl">${Number(modal.item?.total || 0).toLocaleString('es-CO')}</span>
                                 </div>
-
                                 <button onClick={() => setModal({ abierto: false, tipo: 'crear', item: null })} className="w-full mt-4 bg-gray-100 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-200 transition">
                                     Cerrar Ticket
                                 </button>
                             </div>
                         ) : (
-                            /* RESTO DE LOS FORMULARIOS DE CREAR/EDITAR */
                             <form onSubmit={handleGuardar} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
                                 {seccion === 'categorias' && (
                                     <div>
