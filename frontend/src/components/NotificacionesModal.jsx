@@ -29,12 +29,9 @@ export default function NotificacionesModal({ abierto, onClose, notificaciones, 
                 {/* Lista de Notificaciones */}
                 <div className="max-h-[60vh] overflow-y-auto p-2">
                     {notificaciones.length === 0 ? (
-                        <div className="p-8 text-center text-gray-400 flex flex-col items-center gap-2">
-                            <span className="text-3xl">📭</span>
-                            <p className="text-sm font-medium">No tienes notificaciones nuevas.</p>
-                        </div>
+                        <p className="text-sm text-gray-500 text-center py-8">No hay notificaciones nuevas</p>
                     ) : (
-                        <ul className="space-y-1">
+                        <ul className="space-y-2">
                             {notificaciones.map((noti) => (
                                 <li key={noti.id} className="p-3 bg-blue-50/50 hover:bg-blue-50 rounded-xl transition border border-blue-100/50 flex gap-3 items-start">
                                     <div className="bg-blue-100 text-blue-600 rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 mt-0.5">

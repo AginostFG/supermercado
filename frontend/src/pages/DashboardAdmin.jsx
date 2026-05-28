@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-// ✅ NUEVO: Importamos el componente (Asegúrate de que la ruta sea la correcta según tus carpetas)
 import NotificacionesModal from './components/NotificacionesModal'; 
 
 const API = 'https://supermercado-5759.onrender.com';
@@ -12,9 +11,8 @@ export default function DashboardAdmin() {
     const [listaCategorias, setListaCategorias] = useState([]); 
     const [modal, setModal] = useState({ abierto: false, tipo: 'crear', item: null });
     
-    // ✅ ACTUALIZADO: Manejo de notificaciones con Array y estado para abrir/cerrar el modal
     const [alertaNuevaOrden, setAlertaNuevaOrden] = useState(false);
-    const [notificaciones, setNotificaciones] = useState([]); // Ahora es un array
+    const [notificaciones, setNotificaciones] = useState([]); 
     const [modalNotiAbierto, setModalNotiAbierto] = useState(false);
     const ultimoIdVentaRef = useRef(null);
 
@@ -29,7 +27,7 @@ export default function DashboardAdmin() {
             const result = await res.json();
             const newData = Array.isArray(result) ? result : [];
             
-            // ✅ ACTUALIZADO: Construimos el objeto de notificación con datos reales
+            // ✅ Construimos el objeto de notificación con datos reales
             if (seccion === 'ventas' && newData.length > 0) {
                 const maxId = Math.max(...newData.map(v => v.id));
                 
@@ -148,7 +146,7 @@ export default function DashboardAdmin() {
     return (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 p-4 md:p-0 relative">
             
-            {/* ✅ NUEVO: Instancia del Componente Modal de Notificaciones */}
+            {/* Instancia del Componente Modal de Notificaciones */}
             <NotificacionesModal 
                 abierto={modalNotiAbierto} 
                 onClose={() => setModalNotiAbierto(false)} 
@@ -200,9 +198,10 @@ export default function DashboardAdmin() {
                             </button>
                         )}
                         
-                        {/* CONTENEDOR DE ACCIONES DE PERFIL Y CAMPANA */}
+                        {/* 🔔 AQUÍ ESTÁN JUNTOS LA CAMPANA Y EL PERFIL 👥 */}
                         <div className="flex items-center gap-3">
-                            {/* ✅ ACTUALIZADO: Botón que abre el nuevo componente modal */}
+                            
+                            {/* Botón de la Campana */}
                             <button 
                                 onClick={() => setModalNotiAbierto(true)}
                                 className="relative w-12 h-12 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center hover:bg-gray-100 transition active:scale-95 group"
@@ -216,7 +215,7 @@ export default function DashboardAdmin() {
                                 )}
                             </button>
 
-                            {/* BOTÓN DE PERFIL DE ADMIN */}
+                            {/* Botón de Perfil Admin */}
                             <button className="flex items-center gap-2 p-1.5 pr-4 rounded-full bg-gray-50 border border-gray-200 hover:bg-gray-100 transition active:scale-95">
                                 <div className="w-8 h-8 rounded-full bg-green-600 text-white font-bold flex items-center justify-center text-sm">
                                     A
@@ -224,6 +223,7 @@ export default function DashboardAdmin() {
                                 <span className="text-sm font-bold text-gray-700 hidden sm:inline">Perfil Admin</span>
                             </button>
                         </div>
+
                     </div>
                 </div>
 
