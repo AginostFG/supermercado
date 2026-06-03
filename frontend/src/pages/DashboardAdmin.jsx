@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import NotificacionesModal from '../components/NotificacionesModal';
+import RegisterModal from '../components/RegisterModal'; // ✅ Importación de tu RegisterModal
 
 const API = 'https://supermercado-5759.onrender.com';
 const HEADERS = { 'Content-Type': 'application/json', 'x-rol': '2' };
@@ -10,6 +11,7 @@ export default function DashboardAdmin() {
     const [data, setData] = useState([]);
     const [listaCategorias, setListaCategorias] = useState([]); 
     const [modal, setModal] = useState({ abierto: false, tipo: 'crear', item: null });
+    const [isRegisterOpen, setIsRegisterOpen] = useState(false); // ✅ Estado para controlar RegisterModal
     
     const [alertaNuevaOrden, setAlertaNuevaOrden] = useState(false);
     const [notificaciones, setNotificaciones] = useState([]); 
@@ -27,12 +29,10 @@ export default function DashboardAdmin() {
             const result = await res.json();
             const newData = Array.isArray(result) ? result : [];
             
-            // ✅ Construimos el objeto de notificación con datos reales
             if (seccion === 'ventas' && newData.length > 0) {
                 const maxId = Math.max(...newData.map(v => v.id));
                 
                 if (ultimoIdVentaRef.current !== null && maxId > ultimoIdVentaRef.current) {
-                    // Buscamos las órdenes nuevas para sacar el nombre del cliente
                     const nuevasOrdenes = newData.filter(v => v.id > ultimoIdVentaRef.current);
                     
                     const nuevasNotificaciones = nuevasOrdenes.map(orden => ({
@@ -66,7 +66,6 @@ export default function DashboardAdmin() {
         cargarDatos(); 
     }, [seccion, periodoVentas]);
 
-    // Polling cada 15 segundos para alertar nuevos pedidos
     useEffect(() => {
         let intervalo;
         if (seccion === 'ventas') {
@@ -141,7 +140,6 @@ export default function DashboardAdmin() {
         };
     };
 
-    // Helper para procesar la lista de productos de la orden de forma segura
     const obtenerProductosDeOrden = (item) => {
         if (!item) return [];
         const origen = item.productos || item.detalles || item.items;
@@ -161,9 +159,9 @@ export default function DashboardAdmin() {
     const productosOrden = obtenerProductosDeOrden(modal.item);
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 p-4 md:p-0 relative">
+        <div className="flex flex-col min-h-screen bg-gray-50 relative">
             
-            {/* Instancia del Componente Modal de Notificaciones */}
+            {/* Modal de Notificaciones */}
             <NotificacionesModal 
                 abierto={modalNotiAbierto} 
                 onClose={() => setModalNotiAbierto(false)} 
@@ -174,167 +172,196 @@ export default function DashboardAdmin() {
                 }}
             />
 
-            {/* MENÚ LATERAL ADMIN */}
-            <div className="md:col-span-1 bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-2 h-fit">
-                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-2">Panel Admin</h2>
-                {['usuarios', 'inventario', 'categorias', 'ventas'].map(s => (
-                    <button key={s} onClick={() => setSeccion(s)} className={`w-full text-left px-4 py-3 rounded-xl font-semibold capitalize transition ${seccion === s ? 'bg-green-50 text-green-700' : 'text-gray-600 hover:bg-gray-50'}`}>
-                        {s === 'usuarios' ? '👥' : s === 'inventario' ? '📦' : s === 'categorias' ? '🏷️' : '📊'} {s}
-                    </button>
-                ))}
-            </div>
-
-            {/* CONTENIDO PRINCIPAL */}
-            <div className="md:col-span-3 space-y-6">
+            {/* ========================================================= */}
+            {/* BARRA SUPERIOR LAYOUT GENERAL (NAVBAR)                    */}
+            {/* ========================================================= */}
+            <header className="flex justify-between items-center px-6 py-4 bg-white border-b border-gray-200">
+                <div className="text-xl font-bold text-green-600">SuperPro</div>
                 
-                {/* BANNER DE ALERTA NUEVO PEDIDO */}
-                {alertaNuevaOrden && seccion === 'ventas' && (
-                    <div className="bg-blue-600 text-white p-4 rounded-xl shadow-md flex justify-between items-center animate-pulse">
-                        <div className="flex items-center gap-3">
-                            <span className="text-2xl">🔔</span>
-                            <div>
-                                <p className="font-bold">¡Nueva orden recibida!</p>
-                                <p className="text-sm text-blue-100">La lista se ha actualizado automáticamente.</p>
-                            </div>
-                        </div>
-                        <button onClick={() => setAlertaNuevaOrden(false)} className="text-white hover:text-blue-200 font-bold">X</button>
-                    </div>
-                )}
+                {/* Zona de Perfil Superior - Campana y Perfil alineados */}
+                <div className="flex items-center gap-4">
+                    
+                    {/* ✅ CAMBIO 1: La campana ahora se ubica arriba, justo al lado del Perfil */}
+                    <button 
+                        onClick={() => setModalNotiAbierto(true)}
+                        className="relative w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-100 transition active:scale-95 group"
+                        title="Ver Notificaciones"
+                    >
+                        <span className="text-lg group-hover:animate-bounce">🔔</span>
+                        {notificaciones.length > 0 && (
+                            <span className="absolute top-1 right-1 bg-red-500 text-white text-[9px] font-black rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center border border-white shadow-sm">
+                                {notificaciones.length > 99 ? '+99' : notificaciones.length}
+                            </span>
+                        )}
+                    </button>
 
-                {/* CABECERA AJUSTADA */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100 gap-4">
-                    <div className="space-y-3 w-full sm:w-auto">
+                    {/* Avatar de Perfil Circular minimalista */}
+                    <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-sm shadow-sm select-none" title="Administrador">
+                        A
+                    </div>
+
+                    <button className="text-sm text-gray-600 hover:text-red-600 font-medium border-l pl-4">
+                        Salir
+                    </button>
+                </div>
+            </header>
+
+            {/* ========================================================= */}
+            {/* CUERPO DEL DASHBOARD                                      */}
+            {/* ========================================================= */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 p-6">
+                
+                {/* MENÚ LATERAL ADMIN */}
+                <div className="md:col-span-1 bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-2 h-fit">
+                    <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-2">Panel Admin</h2>
+                    {['usuarios', 'inventario', 'categorias', 'ventas'].map(s => (
+                        <button key={s} onClick={() => setSeccion(s)} className={`w-full text-left px-4 py-3 rounded-xl font-semibold capitalize transition ${seccion === s ? 'bg-green-50 text-green-700' : 'text-gray-600 hover:bg-gray-50'}`}>
+                            {s === 'usuarios' ? '👥' : s === 'inventario' ? '📦' : s === 'categorias' ? '🏷️' : '📊'} {s}
+                        </button>
+                    ))}
+                </div>
+
+                {/* CONTENIDO DE LA SECCIÓN ACTIVA */}
+                <div className="md:col-span-3 space-y-6">
+                    
+                    {/* BANNER DE ALERTA NUEVO PEDIDO */}
+                    {alertaNuevaOrden && seccion === 'ventas' && (
+                        <div className="bg-blue-600 text-white p-4 rounded-xl shadow-md flex justify-between items-center animate-pulse">
+                            <div className="flex items-center gap-3">
+                                <span className="text-2xl">🔔</span>
+                                <div>
+                                    <p className="font-bold">¡Nueva orden recibida!</p>
+                                    <p className="text-sm text-blue-100">La lista se ha actualizado automáticamente.</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setAlertaNuevaOrden(false)} className="text-white hover:text-blue-200 font-bold">X</button>
+                        </div>
+                    )}
+
+                    {/* CABECERA DE LA SECCIÓN */}
+                    <div className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                         <div>
                             <h1 className="text-2xl font-black text-gray-800 capitalize">Gestión de {seccion}</h1>
                             <p className="text-gray-500 text-sm">Administra tu plataforma en tiempo real.</p>
                         </div>
                         
-                        {/* 1. BOTÓN AÑADIR NUEVO SOLO EN ESTA PARTE */}
+                        {/* ✅ CAMBIO 2: El botón de Añadir Nuevo se colocó donde antes estaba la campana */}
                         {seccion !== 'ventas' && (
                             <button 
-                                onClick={() => setModal({ abierto: true, tipo: 'crear', item: null })} 
-                                className="bg-green-600 hover:bg-green-700 text-white font-bold px-5 py-2.5 rounded-xl shadow-sm transition active:scale-95 text-sm block"
+                                onClick={() => {
+                                    if (seccion === 'usuarios') {
+                                        setIsRegisterOpen(true); // ✅ CAMBIO 3: Abre el RegisterModal cuando es sección usuarios
+                                    } else {
+                                        setModal({ abierto: true, tipo: 'crear', item: null }); // Mantiene modal nativo para inventario/categorías
+                                    }
+                                }} 
+                                className="bg-green-600 hover:bg-green-700 text-white font-bold px-5 py-2.5 rounded-xl shadow-sm transition active:scale-95 text-sm"
                             >
                                 + Añadir Nuevo
                             </button>
                         )}
                     </div>
-                    
-                    <div className="flex items-center gap-4 w-full sm:w-auto justify-end">
-                        
-                        {/* CONTENEDOR INTEGRADO DE UTILERÍAS */}
-                        <div className="flex items-center gap-3 bg-gray-50 p-1.5 rounded-full border border-gray-200">
-                            
-                            {/* 2. CAMPANA AL LADO IZQUIERDO DEL ICONO DE PERFIL */}
-                            <button 
-                                onClick={() => setModalNotiAbierto(true)}
-                                className="relative w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-200 transition active:scale-95 group"
-                                title="Ver Notificaciones"
-                            >
-                                <span className="text-lg group-hover:animate-bounce">🔔</span>
-                                {notificaciones.length > 0 && (
-                                    <span className="absolute top-0 right-0 bg-red-500 text-white text-[9px] font-black rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center border border-white shadow-sm">
-                                        {notificaciones.length > 99 ? '+99' : notificaciones.length}
-                                    </span>
-                                )}
-                            </button>
 
-                            {/* 3. AVATAR DE PERFIL LIMPIO (BURBUJA DE TEXTO ELIMINADA) */}
-                            <div className="w-10 h-10 rounded-full bg-green-600 text-white font-bold flex items-center justify-center text-sm shadow-sm select-none" title="Administrador">
-                                A
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-
-                {/* TARJETAS DE ESTADÍSTICAS Y FILTROS (Solo en Ventas) */}
-                {seccion === 'ventas' && (
-                    <div className="space-y-6">
-                        <div className="bg-white p-2 rounded-xl shadow-sm border border-gray-100 flex gap-1 overflow-x-auto">
-                            {['diario', 'semanal', 'mensual', 'anual'].map((periodo) => (
-                                <button
-                                    key={periodo}
-                                    onClick={() => setPeriodoVentas(periodo)}
-                                    className={`px-5 py-2.5 rounded-lg font-bold text-sm capitalize transition whitespace-nowrap ${periodoVentas === periodo ? 'bg-green-600 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}
-                                >
-                                    {periodo === 'diario' ? '📅 Hoy' : periodo === 'semanal' ? '🗓️ Semana' : periodo === 'mensual' ? '📊 Mes' : '👑 Año'}
-                                </button>
-                            ))}
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                                <p className="text-gray-500 text-sm font-semibold mb-1">Ingresos Totales</p>
-                                <h3 className="text-2xl font-black text-green-600">${stats.ingresos.toLocaleString('es-CO')}</h3>
-                            </div>
-                            <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                                <p className="text-gray-500 text-sm font-semibold mb-1">Órdenes Realizadas</p>
-                                <h3 className="text-2xl font-black text-blue-600">{stats.ordenes} pedidos</h3>
-                            </div>
-                            <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                                <p className="text-gray-500 text-sm font-semibold mb-1">Productos Vendidos</p>
-                                <h3 className="text-2xl font-black text-purple-600">{stats.items} unidades</h3>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* TABLA DE DATOS */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider font-bold border-b border-gray-100">
-                                <tr>
-                                    <th className="p-4 pl-6">{seccion === 'categorias' ? 'ID' : 'Nombre'}</th>
-                                    <th className="p-4">{seccion === 'categorias' ? 'Categoría' : 'Info'}</th>
-                                    <th className="p-4 pr-6 text-right">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody className="text-sm text-gray-700 divide-y divide-gray-50">
-                                {data.length === 0 ? (
-                                    <tr><td colSpan="3" className="text-center p-8 text-gray-400">No hay datos disponibles en esta sección.</td></tr>
-                                ) : data.map((item, index) => (
-                                    <tr key={item.id || index} className="hover:bg-gray-50/50">
-                                        <td className="p-4 pl-6 font-bold">
-                                            {seccion === 'categorias' ? `#${item.id}` : seccion === 'ventas' ? `Orden #${item.id || index + 100}` : (
-                                                <div className="flex items-center gap-3">
-                                                    {seccion === 'inventario' && item.imagen_url && (
-                                                        <img src={item.imagen_url} alt="img" className="w-10 h-10 rounded-xl object-cover bg-gray-100" />
-                                                    )}
-                                                    <span>{item.nombre || item.cliente_nombre} {item.apellidos || ""}</span>
-                                                </div>
-                                            )}
-                                        </td>
-                                        <td className="p-4 text-gray-600 font-medium">
-                                            {seccion === 'usuarios' ? item.correo
-                                                : seccion === 'inventario' ? `$${Number(item.precio).toLocaleString('es-CO')} | Stock: ${item.stock}`
-                                                : seccion === 'categorias' ? item.nombre
-                                                : `$${Number(item.total || 0).toLocaleString('es-CO')}`}
-                                        </td>
-                                        <td className="p-4 pr-6 text-right">
-                                            {seccion !== 'ventas' ? (
-                                                <div className="flex justify-end gap-2">
-                                                    <button onClick={() => setModal({ abierto: true, tipo: 'editar', item })} className="bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-1.5 rounded-lg text-xs font-bold transition">Editar</button>
-                                                    <button onClick={() => handleEliminar(item.id, item.nombre)} className="bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold transition">Eliminar</button>
-                                                </div>
-                                            ) : (
-                                                <div className="flex justify-end gap-2">
-                                                    <button onClick={() => setModal({ abierto: true, tipo: 'detalle_venta', item })} className="bg-purple-50 text-purple-600 hover:bg-purple-100 px-3 py-1.5 rounded-lg text-xs font-bold transition">
-                                                        Ver Detalles
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </td>
-                                    </tr>
+                    {/* TARJETAS DE ESTADÍSTICAS Y FILTROS (Solo Ventas) */}
+                    {seccion === 'ventas' && (
+                        <div className="space-y-6">
+                            <div className="bg-white p-2 rounded-xl shadow-sm border border-gray-100 flex gap-1 overflow-x-auto">
+                                {['diario', 'semanal', 'mensual', 'anual'].map((periodo) => (
+                                    <button
+                                        key={periodo}
+                                        onClick={() => setPeriodoVentas(periodo)}
+                                        className={`px-5 py-2.5 rounded-lg font-bold text-sm capitalize transition whitespace-nowrap ${periodoVentas === periodo ? 'bg-green-600 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}
+                                    >
+                                        {periodo === 'diario' ? '📅 Hoy' : periodo === 'semanal' ? '🗓️ Semana' : periodo === 'mensual' ? '📊 Mes' : '👑 Año'}
+                                    </button>
                                 ))}
-                            </tbody>
-                        </table>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                                    <p className="text-gray-500 text-sm font-semibold mb-1">Ingresos Totales</p>
+                                    <h3 className="text-2xl font-black text-green-600">${stats.ingresos.toLocaleString('es-CO')}</h3>
+                                </div>
+                                <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                                    <p className="text-gray-500 text-sm font-semibold mb-1">Órdenes Realizadas</p>
+                                    <h3 className="text-2xl font-black text-blue-600">{stats.ordenes} pedidos</h3>
+                                </div>
+                                <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                                    <p className="text-gray-500 text-sm font-semibold mb-1">Productos Vendidos</p>
+                                    <h3 className="text-2xl font-black text-purple-600">{stats.items} unidades</h3>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* TABLA DE REGISTROS */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider font-bold border-b border-gray-100">
+                                    <tr>
+                                        <th className="p-4 pl-6">{seccion === 'categorias' ? 'ID' : 'Nombre'}</th>
+                                        <th className="p-4">{seccion === 'categorias' ? 'Categoría' : 'Info'}</th>
+                                        <th className="p-4 pr-6 text-right">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="text-sm text-gray-700 divide-y divide-gray-50">
+                                    {data.length === 0 ? (
+                                        <tr><td colSpan="3" className="text-center p-8 text-gray-400">No hay datos disponibles en esta sección.</td></tr>
+                                    ) : data.map((item, index) => (
+                                        <tr key={item.id || index} className="hover:bg-gray-50/50">
+                                            <td className="p-4 pl-6 font-bold">
+                                                {seccion === 'categorias' ? `#${item.id}` : seccion === 'ventas' ? `Orden #${item.id || index + 100}` : (
+                                                    <div className="flex items-center gap-3">
+                                                        {seccion === 'inventario' && item.imagen_url && (
+                                                            <img src={item.imagen_url} alt="img" className="w-10 h-10 rounded-xl object-cover bg-gray-100" />
+                                                        )}
+                                                        <span>{item.nombre || item.cliente_nombre} {item.apellidos || ""}</span>
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td className="p-4 text-gray-600 font-medium">
+                                                {seccion === 'usuarios' ? item.correo
+                                                    : seccion === 'inventario' ? `$${Number(item.precio).toLocaleString('es-CO')} | Stock: ${item.stock}`
+                                                    : seccion === 'categorias' ? item.nombre
+                                                    : `$${Number(item.total || 0).toLocaleString('es-CO')}`}
+                                            </td>
+                                            <td className="p-4 pr-6 text-right">
+                                                {seccion !== 'ventas' ? (
+                                                    <div className="flex justify-end gap-2">
+                                                        <button onClick={() => setModal({ abierto: true, tipo: 'editar', item })} className="bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-1.5 rounded-lg text-xs font-bold transition">Editar</button>
+                                                        <button onClick={() => handleEliminar(item.id, item.nombre)} className="bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold transition">Eliminar</button>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex justify-end gap-2">
+                                                        <button onClick={() => setModal({ abierto: true, tipo: 'detalle_venta', item })} className="bg-purple-50 text-purple-600 hover:bg-purple-100 px-3 py-1.5 rounded-lg text-xs font-bold transition">
+                                                            Ver Detalles
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* MODAL DE FORMULARIOS / DETALLES */}
+            {/* ========================================================= */}
+            {/* CONDICIONAL PARA RENDERIZAR TU REGISTERMODAL             */}
+            {/* ========================================================= */}
+            {isRegisterOpen && (
+                <RegisterModal 
+                    onClose={() => {
+                        setIsRegisterOpen(false);
+                        cargarDatos(); // Recarga la tabla de usuarios al cerrarse
+                    }} 
+                />
+            )}
+
+            {/* MODAL GLOBAL ANTERIOR (Para editar e inventario) */}
             {modal.abierto && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl">
@@ -342,7 +369,6 @@ export default function DashboardAdmin() {
                             {modal.tipo === 'editar' ? '✏️ Editar Registro' : modal.tipo === 'detalle_venta' ? '🧾 Ticket de Venta' : '➕ Nuevo Registro'}
                         </div>
                         
-                        {/* VISTA DEL TICKET DEL PEDIDO */}
                         {modal.tipo === 'detalle_venta' ? (
                             <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto text-sm text-gray-700">
                                 <div className="flex justify-between border-b border-gray-100 pb-2">
@@ -370,7 +396,6 @@ export default function DashboardAdmin() {
                                     <span className="font-bold">{modal.item?.cantidad_total || 0} unidades</span>
                                 </div>
                                 
-                                {/* 🛒 DESGLOSE DETALLADO DE PRODUCTOS DEL CARRITO */}
                                 <div className="border-t border-b border-gray-100 py-3 my-2">
                                     <p className="font-bold text-gray-400 uppercase text-[11px] tracking-wider mb-2">Artículos Solicitados</p>
                                     <div className="space-y-2 max-h-44 overflow-y-auto pr-1">
@@ -402,7 +427,6 @@ export default function DashboardAdmin() {
                                 </button>
                             </div>
                         ) : (
-                            /* RESTO DE LOS FORMULARIOS DE CREAR/EDITAR */
                             <form onSubmit={handleGuardar} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
                                 {seccion === 'categorias' && (
                                     <div>
