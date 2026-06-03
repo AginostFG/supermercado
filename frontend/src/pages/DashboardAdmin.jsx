@@ -227,10 +227,7 @@ export default function DashboardAdmin() {
                     </div>
                     
                     {/* BLOQUE DER: Contenedor unificado para utilerías en la esquina superior derecha */}
-                    <div className="flex items-center gap-4 w-full sm:w-auto justify-end">
-
-
-                    </div>
+                
                 </div>
 
                 {/* TARJETAS DE ESTADÍSTICAS Y FILTROS (Solo en Ventas) */}
