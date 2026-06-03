@@ -260,6 +260,33 @@ export default function DashboardAdmin() {
                                 + Añadir Nuevo
                             </button>
                         )}
+                        <div className="flex items-center gap-4 w-full sm:w-auto justify-end">
+                        
+                        <div className="flex items-center gap-3 bg-gray-50 p-1.5 rounded-full border border-gray-200">
+                            
+                            {/* La campana queda perfectamente arriba a la izquierda del avatar de perfil */}
+                            <button 
+                                onClick={() => setModalNotiAbierto(true)}
+                                className="relative w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-200 transition active:scale-95 group"
+                                title="Ver Notificaciones"
+                            >
+                                <span className="text-lg group-hover:animate-bounce">🔔</span>
+                                {notificaciones.length > 0 && (
+                                    <span className="absolute top-0 right-0 bg-red-500 text-white text-[9px] font-black rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center border border-white shadow-sm">
+                                        {notificaciones.length > 99 ? '+99' : notificaciones.length}
+                                    </span>
+                                )}
+                            </button>
+
+                            {/* Círculo del avatar de perfil */}
+                            <div className="w-10 h-10 rounded-full bg-green-600 text-white font-bold flex items-center justify-center text-sm shadow-sm select-none" title="Administrador">
+                                A
+                            </div>
+                        </div>
+
+                    </div>
+                   
+
                     </div>
 
                     {/* TARJETAS DE ESTADÍSTICAS Y FILTROS (Solo Ventas) */}
