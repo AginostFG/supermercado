@@ -159,7 +159,6 @@ export default function DashboardAdmin() {
     const productosOrden = obtenerProductosDeOrden(modal.item);
 
     return (
-        
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 p-4 md:p-6 relative">
             
             {/* Modal de Notificaciones */}
@@ -228,7 +227,7 @@ export default function DashboardAdmin() {
                     </div>
                     
                     {/* BLOQUE DER: Contenedor unificado para utilerías en la esquina superior derecha */}
-                
+                   
                 </div>
 
                 {/* TARJETAS DE ESTADÍSTICAS Y FILTROS (Solo en Ventas) */}
