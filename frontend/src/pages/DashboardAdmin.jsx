@@ -141,7 +141,24 @@ export default function DashboardAdmin() {
         };
     };
 
+    // Helper para procesar la lista de productos de la orden de forma segura
+    const obtenerProductosDeOrden = (item) => {
+        if (!item) return [];
+        const origen = item.productos || item.detalles || item.items;
+        if (!origen) return [];
+        if (Array.isArray(origen)) return origen;
+        if (typeof origen === 'string') {
+            try {
+                return JSON.parse(origen);
+            } catch (e) {
+                return [];
+            }
+        }
+        return [];
+    };
+
     const stats = calcularStatsVentas();
+    const productosOrden = obtenerProductosDeOrden(modal.item);
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 p-4 md:p-0 relative">
@@ -198,7 +215,7 @@ export default function DashboardAdmin() {
                             </button>
                         )}
                         
-                        {/* 🔔 AQUÍ ESTÁN JUNTOS LA CAMPANA Y EL PERFIL 👥 */}
+                        {/* 🔔 CAMPANA Y PERFIL JUNTOS */}
                         <div className="flex items-center gap-3">
                             
                             {/* Botón de la Campana */}
@@ -349,6 +366,28 @@ export default function DashboardAdmin() {
                                     <span className="font-bold">{modal.item?.cantidad_total || 0} unidades</span>
                                 </div>
                                 
+                                {/* 🛒 DESGLOSE DETALLADO DE PRODUCTOS DEL CARRITO */}
+                                <div className="border-t border-b border-gray-100 py-3 my-2">
+                                    <p className="font-bold text-gray-400 uppercase text-[11px] tracking-wider mb-2">Artículos Solicitados</p>
+                                    <div className="space-y-2 max-h-44 overflow-y-auto pr-1">
+                                        {productosOrden.length > 0 ? (
+                                            productosOrden.map((prod, pIdx) => (
+                                                <div key={pIdx} className="flex justify-between items-center text-xs bg-gray-50 p-2 rounded-xl border border-gray-100">
+                                                    <div>
+                                                        <p className="font-bold text-gray-800">{prod.nombre || prod.nombre_producto || 'Producto'}</p>
+                                                        <p className="text-gray-400">{prod.cantidad} x ${Number(prod.precio_unitario || prod.precio || 0).toLocaleString('es-CO')}</p>
+                                                    </div>
+                                                    <span className="font-bold text-gray-700">
+                                                        ${(Number(prod.cantidad || 0) * Number(prod.precio_unitario || prod.precio || 0)).toLocaleString('es-CO')}
+                                                    </span>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <p className="text-gray-400 text-xs italic text-center py-2">No hay desglose de productos disponible.</p>
+                                        )}
+                                    </div>
+                                </div>
+
                                 <div className="flex justify-between bg-green-50 p-4 rounded-xl mt-4 items-center">
                                     <span className="text-green-800 font-black text-lg">Total Pagado:</span>
                                     <span className="text-green-800 font-black text-2xl">${Number(modal.item?.total || 0).toLocaleString('es-CO')}</span>

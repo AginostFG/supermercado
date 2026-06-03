@@ -1,4 +1,8 @@
 import { useState, useEffect } from 'react';
+// 1. Importamos la librería de Toasts y sus estilos
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 import LandingPage from './pages/LandingPage';
 import DashboardCliente from './pages/DashboardCliente';
 import DashboardAdmin from './pages/DashboardAdmin';
@@ -32,6 +36,7 @@ export default function App() {
     setUser(userData);
     setView(role);
     setIsLoginOpen(false);
+    toast.success(`¡Bienvenido de nuevo, ${userData.nombre || 'Usuario'}! 👋`);
   };
 
   const handleRegister = async (userData) => {
@@ -53,13 +58,13 @@ export default function App() {
         setUser(usuarioCompleto);
         setView('cliente');
         setIsRegisterOpen(false);
-        alert("¡Registro exitoso!");
+        toast.success("¡Registro exitoso! 🎉 Bienvenido a SuperPro.");
       } else {
-        alert(data.error || "Error al registrar");
+        toast.error(data.error || "Error al registrar el usuario. ❌");
       }
     } catch (error) {
       console.error("Error conectando al backend:", error);
-      alert("Error: El servidor backend no responde.");
+      toast.error("Error: El servidor backend no responde. 🔌");
     }
   };
 
@@ -68,11 +73,12 @@ export default function App() {
     setUser(null);
     setCart([]);
     setView('landing');
+    toast.info("Has cerrado sesión correctamente. ¡Vuelve pronto!");
   };
 
   const addToCart = (producto) => {
     if (!user) {
-      alert("Debes iniciar sesión para comprar productos.");
+      toast.warn("Debes iniciar sesión para comprar productos. 🔑");
       setIsLoginOpen(true);
       return;
     }
@@ -83,21 +89,23 @@ export default function App() {
 
       if (existe) {
         if (existe.cantidad >= producto.stock) {
-          alert(`¡Límite alcanzado! Solo quedan ${producto.stock} unidades disponibles.`);
+          toast.error(`¡Límite alcanzado! Solo quedan ${producto.stock} unidades disponibles.`);
           return prevCart;
         }
+        toast.success(`Se añadió otra unidad de ${producto.nombre} 🛒`);
         return itemsActuales.map(item =>
           item.id === producto.id ? { ...item, cantidad: (item.cantidad || 1) + 1 } : item
         );
       }
 
+      toast.success(`${producto.nombre} agregado al carrito 🛒`);
       return [...itemsActuales, { ...producto, cantidad: 1 }];
     });
   };
 
   const updateCartQuantity = (productoId, nuevaCantidad, stockDisponible) => {
     if (nuevaCantidad > stockDisponible) {
-      alert(`¡Límite alcanzado! Solo quedan ${stockDisponible} unidades.`);
+      toast.warn(`¡Límite alcanzado! Solo quedan ${stockDisponible} unidades.`);
       return;
     }
     if (nuevaCantidad < 1) return;
@@ -108,7 +116,9 @@ export default function App() {
   };
 
   const removeFromCart = (indexToRemove) => {
+    const itemEliminado = cart[indexToRemove];
     setCart(prev => prev.filter((_, index) => index !== indexToRemove));
+    if (itemEliminado) toast.info(`${itemEliminado.nombre} eliminado del carrito.`);
   };
 
   const goToCheckout = () => {
@@ -121,7 +131,6 @@ export default function App() {
       const response = await fetch('https://supermercado-5759.onrender.com/api/comprar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // Enviamos el carrito, id de usuario, dirección unificada y el método de pago seleccionado
         body: JSON.stringify({ 
           cart, 
           usuario_id: user?.id,
@@ -131,20 +140,23 @@ export default function App() {
       });
 
       if (response.ok) {
-        alert("¡Pago exitoso! Hemos registrado tu compra y descontado el inventario.");
+        toast.success("¡Pago exitoso! Hemos registrado tu compra y actualizado el inventario. 💳✨");
         setCart([]);
         setView('cliente');
       } else {
-        alert("Hubo un error procesando tu compra. Intenta de nuevo.");
+        toast.error("Hubo un error procesando tu compra. Intenta de nuevo. 😥");
       }
     } catch (error) {
       console.error("Error en la compra:", error);
-      alert("Error al conectar con el servidor.");
+      toast.error("Error al conectar con el servidor. Intentelo más tarde.");
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
+      {/* Contenedor Global de Notificaciones Flotantes */}
+      <ToastContainer position="top-right" autoClose={4000} hideProgressBar={false} closeOnClick pauseOnHover draggable />
+
       <nav className="bg-white shadow-sm p-4 px-6 flex justify-between items-center sticky top-0 z-40">
         <div
           className="text-2xl font-black text-green-600 cursor-pointer"
