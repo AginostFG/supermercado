@@ -13,7 +13,7 @@ router.post('/', async (req, res) => {
     // 1. Calculamos el total de la venta
     const total = cart.reduce((sum, item) => sum + (Number(item.precio) * (item.cantidad || 1)), 0);
 
-    // 2. Insertamos la venta guardando la dirección completa y el método de pago especificados por el cliente
+    // 2. Insertamos la venta
     const [resultVenta] = await db.execute(
       'INSERT INTO ventas (usuario_id, trabajador_id, total, fecha_venta, direccion, metodo_pago) VALUES (?, NULL, ?, NOW(), ?, ?)',
       [usuario_id || null, total, direccion || 'No especificada', metodoPago || 'Pago Contra Entrega']
@@ -26,9 +26,9 @@ router.post('/', async (req, res) => {
     for (let item of cart) {
       const cantidad = item.cantidad || 1;
       
-      // Guardar en venta_detalles
+      // 👇 AQUÍ ESTABA EL ERROR: Cambiado de venta_detalles a detalles_venta 👇
       await db.execute(
-        'INSERT INTO venta_detalles (venta_id, producto_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)', 
+        'INSERT INTO detalles_venta (venta_id, producto_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)', 
         [ventaId, item.id, cantidad, item.precio]
       );
       
@@ -41,7 +41,7 @@ router.post('/', async (req, res) => {
     
     res.json({ mensaje: "Compra procesada con éxito y registrada en ventas" });
   } catch (err) {
-    console.error(err);
+    console.error("Error al procesar compra:", err);
     res.status(500).json({ error: err.message });
   }
 });
