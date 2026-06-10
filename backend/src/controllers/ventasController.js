@@ -3,7 +3,7 @@ const db = require('../db');
 const getVentasHoy = async (req, res) => {
   try {
     const [rows] = await db.query(`
-      SELECT v.id, u.nombre AS cliente, v.total, v.fecha
+      SELECT v.id, u.nombre AS cliente, v.total, v.fecha, v.productos, v.direccion, v.metodo_pago, v.cantidad_total
       FROM ventas v
       JOIN usuarios u ON v.usuario_id = u.id
       WHERE DATE(v.fecha) = CURDATE()
@@ -16,7 +16,7 @@ const getVentasHoy = async (req, res) => {
 const getTodasVentas = async (req, res) => {
   try {
     const [rows] = await db.query(`
-      SELECT v.id, u.nombre AS cliente, v.total, v.fecha
+      SELECT v.id, u.nombre AS cliente, v.total, v.fecha, v.productos, v.direccion, v.metodo_pago, v.cantidad_total
       FROM ventas v
       JOIN usuarios u ON v.usuario_id = u.id
       ORDER BY v.fecha DESC
