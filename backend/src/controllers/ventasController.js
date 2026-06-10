@@ -26,7 +26,14 @@ const getVentasHoy = async (req, res) => {
       GROUP BY v.id, u.nombre, v.total, v.fecha_venta
       ORDER BY v.fecha_venta DESC
     `);
-    res.json(rows);
+
+    // ✨ Convertimos el string de productos a un Array real de JavaScript
+    const ventasParseadas = rows.map(venta => ({
+      ...venta,
+      productos: typeof venta.productos === 'string' ? JSON.parse(venta.productos) : venta.productos
+    }));
+
+    res.json(ventasParseadas);
   } catch (err) { 
     console.error(err);
     res.status(500).json({ error: err.message }); 
@@ -58,7 +65,14 @@ const getTodasVentas = async (req, res) => {
       GROUP BY v.id, u.nombre, v.total, v.fecha_venta
       ORDER BY v.fecha_venta DESC
     `);
-    res.json(rows);
+
+    // ✨ Convertimos el string de productos a un Array real de JavaScript
+    const ventasParseadas = rows.map(venta => ({
+      ...venta,
+      productos: typeof venta.productos === 'string' ? JSON.parse(venta.productos) : venta.productos
+    }));
+
+    res.json(ventasParseadas);
   } catch (err) { 
     console.error(err);
     res.status(500).json({ error: err.message }); 
