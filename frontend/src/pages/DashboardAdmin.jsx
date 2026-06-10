@@ -200,11 +200,11 @@ export default function DashboardAdmin() {
                 )}
 
                 {/* ---------------- COPIAR DESDE AQUÍ ---------------- */}
-                {/* CABECERA PRINCIPAL MODIFICADA */}
+                {/* CABECERA PRINCIPAL (Ya sin perfil y sin campana atrapada) */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100 gap-4">
                     
-                    {/* BLOQUE IZQUIERDO: Título, Subtítulo y Botón de añadir nuevo */}
-                    <div className="space-y-3 w-full sm:w-auto">
+                    {/* BLOQUE ÚNICO: Título, Subtítulo y Botón de añadir nuevo */}
+                    <div className="space-y-3 w-full">
                         <div>
                             <h1 className="text-2xl font-black text-gray-800 capitalize">Gestión de {seccion}</h1>
                             <p className="text-gray-500 text-sm">Administra tu plataforma en tiempo real.</p>
@@ -219,37 +219,29 @@ export default function DashboardAdmin() {
                                         setModal({ abierto: true, tipo: 'crear', item: null }); 
                                     }
                                 }} 
-                                className="bg-green-600 hover:bg-green-700 text-white font-bold px-5 py-2.5 rounded-xl shadow-sm transition active:scale-95 text-sm"
+                                className="bg-green-600 hover:bg-green-700 text-white font-bold px-5 py-2.5 rounded-xl shadow-sm transition active:scale-95 text-sm inline-block"
                             >
                                 + Añadir Nuevo
                             </button>
                         )}
                     </div>
-                    
-                    {/* BLOQUE DERECHO: Campana + Línea Divisoria + Perfil Limpio */}
-                    <div className="flex items-center gap-4 w-full sm:w-auto justify-end">
-                        
-                        {/* Botón de la Campana */}
-                        <button 
-                            onClick={() => setModalNotiAbierto(true)}
-                            className="relative p-2 text-gray-400 hover:text-yellow-500 transition-colors flex items-center justify-center group"
-                            title="Ver Notificaciones"
-                        >
-                            <svg className="w-7 h-7 group-hover:animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                            </svg>
-                            {notificaciones.length > 0 && (
-                                <span className="absolute top-1 right-1 bg-red-500 text-white text-[9px] font-black rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center border border-white shadow-sm">
-                                    {notificaciones.length > 99 ? '+99' : notificaciones.length}
-                                </span>
-                            )}
-                        </button>
-
-                        {/* Raya vertical divisoria */}
-                        <div className="w-px h-8 bg-gray-200"></div>
-
-                    </div>
                 </div>
+
+                {/* 👇 LA CAMPANA FLOTANTE: Se ubicará visualmente en la barra superior de App.jsx 👇 */}
+                <button 
+                    onClick={() => setModalNotiAbierto(true)}
+                    className="fixed top-4 right-[140px] md:right-[170px] z-50 p-2 text-gray-400 hover:text-yellow-500 transition-colors flex items-center justify-center group bg-white/80 backdrop-blur-sm rounded-full"
+                    title="Ver Notificaciones"
+                >
+                    <svg className="w-7 h-7 group-hover:animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    {notificaciones.length > 0 && (
+                        <span className="absolute top-0 right-0 bg-red-500 text-white text-[9px] font-black rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center border border-white shadow-sm">
+                            {notificaciones.length > 99 ? '+99' : notificaciones.length}
+                        </span>
+                    )}
+                </button>
                 {/* ---------------- HASTA AQUÍ ---------------- */}
 
                 {/* TARJETAS DE ESTADÍSTICAS Y FILTROS (Solo en Ventas) */}
