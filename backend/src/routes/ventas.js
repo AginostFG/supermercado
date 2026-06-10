@@ -7,7 +7,6 @@ router.get('/ventas', async (req, res) => {
   const periodo = req.query.periodo || 'diario';
   let filtroFecha = '';
 
-  // Filtros dinámicos de fechas
   if (periodo === 'diario') {
     filtroFecha = 'DATE(v.fecha_venta) = CURDATE()';
   } else if (periodo === 'semanal') {
@@ -19,7 +18,6 @@ router.get('/ventas', async (req, res) => {
   }
 
   try {
-    // Agregadas las columnas v.direccion y v.metodo_pago para reflejar los datos de entrega en el dashboard admin
     const query = `
       SELECT 
         v.id, 
@@ -28,15 +26,34 @@ router.get('/ventas', async (req, res) => {
         v.total,
         v.direccion,
         v.metodo_pago,
-        (SELECT SUM(cantidad) FROM venta_detalles WHERE venta_id = v.id) AS cantidad_total
+        COALESCE(SUM(vd.cantidad), 0) AS cantidad_total,
+        IFNULL(
+          JSON_ARRAYAGG(
+            JSON_OBJECT(
+              'nombre', p.nombre,
+              'cantidad', vd.cantidad,
+              'precio_unitario', vd.precio_unitario
+            )
+          ), '[]'
+        ) AS productos
       FROM ventas v
       LEFT JOIN usuarios u ON v.usuario_id = u.id
+      LEFT JOIN venta_detalles vd ON v.id = vd.venta_id
+      LEFT JOIN productos p ON vd.producto_id = p.id
       ${filtroFecha ? `WHERE ${filtroFecha}` : ''}
+      GROUP BY v.id, u.nombre, v.fecha_venta, v.total, v.direccion, v.metodo_pago
       ORDER BY v.fecha_venta DESC
     `;
     
     const [rows] = await db.query(query);
-    res.json(rows);
+
+    // ✨ Parseamos los productos de String a Array Real antes de responder a React
+    const ventasParseadas = rows.map(venta => ({
+      ...venta,
+      productos: typeof venta.productos === 'string' ? JSON.parse(venta.productos) : venta.productos
+    }));
+
+    res.json(ventasParseadas);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -53,8 +70,7 @@ router.get('/usuario/:id', async (req, res) => {
         v.fecha_venta, 
         v.total, 
         v.direccion, 
-        v.metodo_pago,
-        (SELECT SUM(cantidad) FROM venta_detalles WHERE venta_id = v.id) AS cantidad_productos
+        v.metodo_pago
       FROM ventas v
       WHERE v.usuario_id = ?
       ORDER BY v.fecha_venta DESC
