@@ -248,10 +248,6 @@ export default function DashboardAdmin() {
                         {/* Raya vertical divisoria */}
                         <div className="w-px h-8 bg-gray-200"></div>
 
-                        {/* Botón de Perfil Admin LIMPIO (Se quitó el círculo verde con la "A") */}
-                        <button className="flex items-center gap-2 bg-white px-4 py-2.5 rounded-xl shadow-sm border border-gray-100 hover:bg-gray-50 transition active:scale-95">
-                            <span className="font-bold text-sm text-gray-700">Perfil Admin</span>
-                        </button>
                     </div>
                 </div>
                 {/* ---------------- HASTA AQUÍ ---------------- */}
