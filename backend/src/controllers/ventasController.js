@@ -7,27 +7,30 @@ const getVentasHoy = async (req, res) => {
         v.id, 
         u.nombre AS cliente_nombre, 
         v.total, 
-        v.fecha,
-        COALESCE(SUM(dv.cantidad), 0) AS cantidad_total,
+        v.fecha_venta AS fecha,
+        COALESCE(SUM(vd.cantidad), 0) AS cantidad_total,
         IFNULL(
           JSON_ARRAYAGG(
             JSON_OBJECT(
               'nombre', p.nombre,
-              'cantidad', dv.cantidad,
-              'precio_unitario', dv.precio_unitario
+              'cantidad', vd.cantidad,
+              'precio_unitario', vd.precio_unitario
             )
           ), '[]'
         ) AS productos
       FROM ventas v
       JOIN usuarios u ON v.usuario_id = u.id
-      LEFT JOIN detalles_venta dv ON v.id = dv.venta_id
-      LEFT JOIN productos p ON dv.producto_id = p.id
-      WHERE DATE(v.fecha) = CURDATE()
-      GROUP BY v.id, u.nombre, v.total, v.fecha
-      ORDER BY v.fecha DESC
+      LEFT JOIN venta_detalles vd ON v.id = vd.venta_id
+      LEFT JOIN productos p ON vd.producto_id = p.id
+      WHERE DATE(v.fecha_venta) = CURDATE()
+      GROUP BY v.id, u.nombre, v.total, v.fecha_venta
+      ORDER BY v.fecha_venta DESC
     `);
     res.json(rows);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { 
+    console.error(err);
+    res.status(500).json({ error: err.message }); 
+  }
 };
 
 const getTodasVentas = async (req, res) => {
@@ -37,26 +40,29 @@ const getTodasVentas = async (req, res) => {
         v.id, 
         u.nombre AS cliente_nombre, 
         v.total, 
-        v.fecha,
-        COALESCE(SUM(dv.cantidad), 0) AS cantidad_total,
+        v.fecha_venta AS fecha,
+        COALESCE(SUM(vd.cantidad), 0) AS cantidad_total,
         IFNULL(
           JSON_ARRAYAGG(
             JSON_OBJECT(
               'nombre', p.nombre,
-              'cantidad', dv.cantidad,
-              'precio_unitario', dv.precio_unitario
+              'cantidad', vd.cantidad,
+              'precio_unitario', vd.precio_unitario
             )
           ), '[]'
         ) AS productos
       FROM ventas v
       JOIN usuarios u ON v.usuario_id = u.id
-      LEFT JOIN detalles_venta dv ON v.id = dv.venta_id
-      LEFT JOIN productos p ON dv.producto_id = p.id
-      GROUP BY v.id, u.nombre, v.total, v.fecha
-      ORDER BY v.fecha DESC
+      LEFT JOIN venta_detalles vd ON v.id = vd.venta_id
+      LEFT JOIN productos p ON vd.producto_id = p.id
+      GROUP BY v.id, u.nombre, v.total, v.fecha_venta
+      ORDER BY v.fecha_venta DESC
     `);
     res.json(rows);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { 
+    console.error(err);
+    res.status(500).json({ error: err.message }); 
+  }
 };
 
 module.exports = { getVentasHoy, getTodasVentas };
